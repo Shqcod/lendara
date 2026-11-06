@@ -1,0 +1,15 @@
+{
+  "contract_version": "1",
+  "feature_schema": "loan-finance-v1",
+  "anomaly_check_id": 73,
+  "submission_id": 28,
+  "model_version_code": "stub-v0",
+  "features": {
+    "monthly_income": 8000000,
+    "monthly_expenses": 3000000,
+    "existing_installments": 1000000,
+    "loan_amount": 20000000,
+    "tenor_months": 12
+  }
+}
+

@@ -1,5 +1,13 @@
 # Progres implementasi
 
+## Sesi 6 November 2026 — commit awal berkas proyek
+
+- Melanjutkan pencatatan Git setelah commit aturan `0adf2b8`: memasukkan berkas proyek yang sebelumnya untracked, termasuk backend, frontend, stub ML, lockfile, konfigurasi contoh, skrip, kontrak/dokumentasi, fixture fiktif, dan bukti validasi yang sudah disimpan.
+- Pemeriksaan sebelum staging: 163 berkas kandidat (1.251.684 byte). Pemindaian nilai rahasia lokal dan pola private key/token pada kandidat tidak menemukan kecocokan; nilai rahasia tidak dicetak. Contoh konfigurasi memiliki isian kredensial/kunci kosong. `git check-ignore` membuktikan empat .env lokal, .tools, vendor, node_modules, dan venv tetap dikecualikan.
+- Pemeriksaan sesi ini berfokus pada daftar berkas, pengecualian Git, rahasia, serta diff staging. Tidak menjalankan ulang pengujian aplikasi; hasil suite yang tercatat sebelumnya tetap merupakan bukti sesi masing-masing. Tidak mengubah kode aplikasi, .env, atau database, dan tidak melakukan push.
+- `git diff --cached --check` menandai baris kosong berlebih di akhir 28 berkas lama; isi berkas dipertahankan untuk commit kondisi awal. Pemeriksaan ulang dengan `git -c core.whitespace=-blank-at-eof diff --cached --check` lulus untuk jenis whitespace lain. Peringatan normalisasi LF/CRLF saat staging mengikuti konfigurasi Git/atribut yang sudah ada.
+- Pekerjaan fitur berikutnya tetap dokumen privat/pengiriman snapshot sesuai daftar di bawah. Commit ini merekam kondisi proyek yang sudah ada, bukan klaim penyelesaian tahap fitur berikutnya.
+
 ## Sesi 6 November 2026 — aturan commit setiap perubahan
 
 - Atas permintaan pengguna, AGENTS mewajibkan commit lokal pada akhir setiap tugas yang mengubah berkas, setelah pemeriksaan relevan dan pembaruan progres. Stage dibatasi pada cakupan tugas, pesan commit menjelaskan perubahan, dan rahasia tetap dikecualikan. Push memerlukan permintaan pengguna.

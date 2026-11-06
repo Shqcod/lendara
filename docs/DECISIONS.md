@@ -1,0 +1,31 @@
+# Keputusan proyek
+
+| ID | Keputusan | Alasan / batas |
+|---|---|---|
+| D01 | SvelteKit TypeScript + Laravel12 API + MySQL + FastAPI | Stack disepakati; major upgrade perlu review kompatibilitas |
+| D02 | Cookie Sanctum, database session | Frontend milik sendiri, pencabutan sesi dapat dilacak |
+| D03 | Semua identitas/berkas fiktif | Prototipe akademik; evaluasi ML simulasi |
+| D04 | Snapshot/attempt/decision terpisah | Revisi dan retry dapat ditelusuri |
+| D05 | Penyetuju hanya approve/reject | Revisi hanya verifikator |
+| D06 | Satu aktif nasabah, satu aktif assignment/app | Constraint generated unique + transaksi |
+| D07 | FK komposit untuk snapshot/check/assignment | Hindari referensi lintas versi/pengajuan |
+| D08 | First status history saat kirim, bukan create draft | Draft delete kompatibel dengan append-only history |
+| D09 | Cleanup job database dalam transaksi sama | Penghapusan draf tidak meninggalkan file tanpa pekerjaan persisten |
+| D10 | Prediction check dibuat bersama submission; dispatch afterCommit | Job hilang tetap dapat dipulihkan timeout scheduler |
+| D11 | Stub header khusus local/testing, stub-* | Skenario tetap tanpa mencemari data demo; tidak boleh demo akhir |
+| D12 | Raw input tetap5, ratios di pipeline Python | Varian5/8 tidak mengubah Laravel |
+| D13 | decision_function threshold0 tetap | Contamination dipilih train/val; score bukan probabilitas |
+| D14 | Customer resources allowlist terpisah | Hasil model dan notes internal tidak bocor |
+| D15 | Windows menggunakan timeout HTTP/deadline | PCNTL worker timeout tidak diasumsikan; Linux diuji terpisah |
+| D16 | Frontend dan test bersama tiap fitur | Integrasi tidak ditunda hingga akhir |
+| D17 | Daftar role admin tidak memberi akses berkas otomatis | Prinsip scope fungsi yang disepakati |
+| D18 | 6 November 2026: nama produk Lendara, folder utama lendara | Berlaku pada identitas konfigurasi, dokumentasi, judul halaman, dan metadata; judul akademik, struktur layanan, kontrak API, aturan bisnis, serta nama database terkonfigurasi tetap |
+| D19 | 6 November 2026: scaffold SvelteKit 3/TypeScript 6 dan Node portable seri 22 | Template CLI saat setup memerlukan Node >=22.17. Node 22.23.4 lokal terverifikasi SHA256 dipakai tanpa memperbarui Node sistem 22.13.1; Vite/plugin dipatch dalam major yang sama. Versi frontend terkunci di package-lock.json; Laravel tetap major 12 |
+| D20 | 6 November 2026: migration eksplisit dan pengujian MySQL terisolasi | Hook scaffold tidak menjalankan migration/SQLite. Pengguna mengonfirmasi kkp_pinjaman_test; guard PHPUnit/server browser memeriksa konfigurasi dan SELECT DATABASE() efektif sebelum transaksi uji. Feature test memakai transaksi rollback, Playwright menolak reuse server. Tidak mengganti nama atau menghapus database terkonfigurasi |
+| D21 | 6 November 2026: hash Argon2id untuk akun baru dan SPA tanpa bearer token | PHP lokal mendukung Argon2id; membedakan kata sandi yang berbeda setelah byte ke-72. Minimal 8 karakter dan confirmation tetap. Resource user memakai allowlist, token API tidak diterbitkan; fitur peran/otorisasi domain tetap untuk tahap berikutnya |
+| D22 | 6 November 2026: schema domain lengkap, implementasi tetap per irisan | 13 tabel tersisa ditambahkan tanpa users kedua; InnoDB, CHECK, generated unique dan FK komposit diuji pada MySQL. Notes verifikasi nullable hanya ketika kontrak tidak mewajibkannya; transisi/otorisasi internal tidak dianggap selesai hanya karena tabel tersedia |
+| D23 | 6 November 2026: presisi uang dan batas teknis request profil/draf | Uang wajib string kanonik DECIMAL(18,2), integer mengikuti UINT32, TEXT dibatasi 16000 karakter UTF-8. Tidak menambah batas kelayakan kredit. Nomor aplikasi dibuat server dengan LND + ULID; waktu API UTC dan tampilan WIB |
+| D24 | 6 November 2026: lock user sebelum aplikasi dan cleanup persisten | Mutasi memeriksa ulang akun aktif/peran dalam transaksi; cleanup beforeCommit memakai koneksi DB sama dan queue document-cleanup. Hanya prefix privat loan-documents/ yang dapat dibersihkan. Seed D01–D04 idempoten dan berhenti pada konflik konfigurasi tanpa overwrite |
+
+Jika ada perubahan, tambah entri tanggal/alasan/dampak; perbarui dokumen terkait. Catat perbedaan implementasi aktual dengan target, jangan menyembunyikannya.
+

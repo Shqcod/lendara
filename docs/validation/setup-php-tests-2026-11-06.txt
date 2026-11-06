@@ -1,0 +1,24 @@
+php artisan test - hasil sesi setup 6 November 2026
+   PASS  Tests\Unit\PasswordHashTest
+   PASS  Tests\Unit\PredictionClientTest
+   FAIL  Tests\Feature\AuthenticationTest
+  Tests:    14 failed, 3 passed (17 assertions)
+  Duration: 1.43s
+Exit code: 2
+Percobaan awal saat tabel pendukung belum tersedia. Lihat hasil ulang setelah migration dan guard koneksi efektif di bawah.
+
+Ulang setelah migration dan verifikasi koneksi efektif PHPUnit:
+php artisan test --no-ansi
+   PASS  Tests\Unit\PasswordHashTest
+   PASS  Tests\Unit\PredictionClientTest
+   PASS  Tests\Feature\AuthenticationTest
+PHPUnit effective connection: mysql / kkp_pinjaman_test / 8.0.30
+   PASS  Tests\Feature\DatabaseIsolationTest
+  Tests:    18 passed (112 assertions)
+  Duration: 2.69s
+Exit code: 0
+
+Setelah penyesuaian DATETIME users sesuai kontrak:
+php artisan test --no-ansi
+PHPUnit effective connection: mysql / kkp_pinjaman_test / 8.0.30
+18 passed (116 assertions), exit 0.
