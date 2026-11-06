@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 
 test('nasabah menyimpan profil dan draf, memulihkan respons terputus, lalu menghapus draf dengan konfirmasi', async ({ page }) => {
+	test.setTimeout(120000);
 	const email = `draft-${randomUUID()}@example.test`;
 	const password = randomUUID();
 	const identity = '000' + Date.now().toString();

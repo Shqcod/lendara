@@ -8,7 +8,7 @@ use RuntimeException;
 
 class DomainError extends RuntimeException
 {
-    public function __construct(public readonly string $domainCode, string $message, public readonly int $status = 409)
+    public function __construct(public readonly string $domainCode, string $message, public readonly int $status = 409, public readonly array $errors = [])
     {
         parent::__construct($message);
     }
@@ -16,7 +16,7 @@ class DomainError extends RuntimeException
     public function render(Request $request): JsonResponse
     {
         return response()->json([
-            'message' => $this->getMessage(), 'code' => $this->domainCode, 'errors' => (object) [],
+            'message' => $this->getMessage(), 'code' => $this->domainCode, 'errors' => (object) $this->errors,
         ], $this->status);
     }
 }

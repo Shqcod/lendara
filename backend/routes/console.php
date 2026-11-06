@@ -2,6 +2,7 @@
 
 use App\Jobs\SystemProbe;
 use App\Services\PredictionClient;
+use App\Services\PredictionResults;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -128,3 +129,8 @@ if (app()->environment('local', 'testing')) {
     Schedule::call(fn () => Cache::put('system.scheduler.last_run', now()->toIso8601String(), 3600))
         ->name('system-scheduler-probe')->everyMinute();
 }
+Artisan::command('anomalies:expire', function (PredictionResults $results) {
+    $this->info('Percobaan kedaluwarsa ditandai gagal: '.$results->expire());
+})->purpose('Pulihkan percobaan processing yang melewati deadline tanpa mengubah status pengajuan');
+
+Schedule::command('anomalies:expire', ['--env' => app()->environment()])->everyMinute()->withoutOverlapping();

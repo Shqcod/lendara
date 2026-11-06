@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint FastAPI stub, auth/register/login/logout/me, profil nasabah, CRUD draf, serta jenis/unggah/daftar/unduh dokumen nasabah Laravel tersedia; pembuktian integrasinya mengikuti PROGRESS.md. Pengiriman snapshot, akses dokumen internal sesuai scope tahap, peninjauan internal, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint FastAPI stub, auth/register/login/logout/me, profil, CRUD draf, dokumen privat, kirim/kirim ulang, arsip snapshot, dan riwayat status nasabah Laravel tersedia; pembuktian mengikuti PROGRESS.md. Job prediksi persisten/deadline tersedia, tetapi akses dokumen internal sesuai scope tahap, retry manual, peninjauan internal, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -63,7 +63,7 @@ Body pengajuan: loan_amount,tenor_months,purpose,monthly_income,monthly_expenses
 - Unduhan melalui policy kepemilikan, attachment, MIME yang dideteksi server, Cache-Control no-store/private, dan X-Content-Type-Options nosniff. File hilang 404. Peran internal termasuk admin masih 403 pada irisan ini; izin internal sesuai tahap akan diimplementasikan bersama peninjauan, bukan diberikan otomatis.
 - PHP bawaan Laragon teramati mengizinkan 2G; helper start-backend membatasi proses lokal menjadi upload_max_filesize=5M dan post_max_size=8M. Post melewati batas server menghasilkan 413 PAYLOAD_TOO_LARGE; file melewati batas upload PHP/validasi menghasilkan 422 pada field file. UI menangani keduanya tanpa mengulang unggahan otomatis.
 
-Bagian pengiriman/internal berikut tetap merupakan kontrak tahap berikutnya. Keberadaan tabelnya tidak berarti endpoint atau alur tersebut sudah selesai.
+Bagian internal berikut tetap merupakan kontrak tahap berikutnya. Keberadaan tabelnya tidak berarti endpoint atau alur tersebut sudah selesai.
 
 Upload satu file/request; PDF/JPG/JPEG/PNG max 5 MB, validasi MIME/isi + ekstensi. Nama storage dibuat server. Config PHP/webserver diselaraskan, 413 dinormalisasi jika memungkinkan. File versi lama dipertahankan. Download nasabah hanya miliknya; internal hanya verifikator/penyetuju pada tahap yang diizinkan. Admin tidak otomatis mendapat akses. Proteksi berlaku juga untuk dokumen lama yang terkait versi pengajuan tersebut.
 
@@ -72,6 +72,15 @@ Customer resource allowlist: data sendiri, status, waktu transisi, revision_reas
 ## Pengiriman atomik
 
 Lock aplikasi, cocokkan expected_current_submission_id/status/kepemilikan, validasi lengkap, pilih model aktif, buat snapshot + tautan dokumen + anomaly_checks processing dengan deadline + update pointer/status + history dalam transaksi. Commit; dispatch job prediksi afterCommit. Pemanggilan FastAPI di luar transaksi. Jika dispatch gagal diketahui, catat dan set failed kondisional; jika proses mati scheduler memulihkan. Jangan melaporkan snapshot yang sudah commit seolah batal. Tidak ada auto-retry POST oleh browser; baca ulang status jika hasil jaringan tidak diketahui. Dua kirim bersamaan hanya satu commit, lainnya 409. Retry pemeriksaan mengikuti pola transaksi serupa, tidak membuat snapshot.
+
+### Irisan pengiriman yang tersedia
+
+- POST submissions hanya memakai **data kerja tersimpan**, bukan field keuangan/profil dari body. `expected_current_submission_id` wajib hadir: null pertama, integer positif ID lama saat kirim ulang. `confirmed` wajib literal JSON true. Milik nasabah lain 404 sebelum validasi field. Pointer berubah 409 SUBMISSION_VERSION_CONFLICT; status selain draft/revision_required 409 INVALID_STATUS_TRANSITION. Nasabah/internal/nonaktif mengikuti pengamanan route dan pemeriksaan ulang user dengan lock.
+- Semua field profil (termasuk phone, workplace_name, work_duration_months; nol bulan diperbolehkan), tujuan, dan lima angka wajib lengkap sesuai validasi/kapasitas profil/draf. Jenis aktif/wajib harus memiliki versi terkini dengan berkas yang masih dapat dibaca; dokumen aktif opsional yang tersedia juga ditautkan. Error 422 SUBMISSION_INCOMPLETE memakai key `profile.<field>`, nama field keuangan/tujuan, dan `documents.<code>`.
+- Tidak ada model aktif yang sesuai mode/metadata: 503 SERVICE_NOT_READY tanpa detail model pada respons nasabah; snapshot/check/history tidak dibuat. Stub-v0 hanya untuk mode stub local/testing. Demo/production atau mode model menolak model aktif stub-*. Tidak ada pemanggilan FastAPI selama lock transaksi atau fallback model otomatis.
+- Berhasil 202 `{data:<snapshot nasabah>,message:...}`. Snapshot berisi id,version_number,customer_snapshot dengan allowlist field profil,enam field pinjaman/keuangan,submitted_at,documents dengan resource versi dokumen yang aman. Uang tetap string dua desimal; konversi float finite hanya untuk lima masukan internal ML, bukan penyimpanan/JSON uang publik. Tidak ada check/model/score/notes internal pada respons.
+- GET submissions dipaginasi (default 20, maksimum 100), terbaru dahulu. Detail snapshot harus berada pada pengajuan yang sama; mismatch 404. GET status-histories dipaginasi serupa, berisi id,submission_id,from_status,to_status,changed_at,revision_reason. Alasan revisi **hanya** dari verification_results request_revision yang terkait; notes history/approval mentah tidak disalin.
+- Setiap pengiriman membuat check attempt 1 processing dengan deadline 120 detik dan model dipin ke baris check. Callback afterCommit menaruh RunPrediction di database queue predictions. Kegagalan enqueue mempertahankan 202/snapshot commit, menandai check failed kondisional jika DB tersedia, atau membiarkan scheduler memulihkan deadline. Status bisnis tetap pending_verification.
 
 ## Internal
 

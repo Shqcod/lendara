@@ -7,6 +7,7 @@ export default defineConfig({
 	retries: 0,
 	reporter: 'list',
 	timeout: 60000,
+	expect: { timeout: 15000 },
 	use: {
 		baseURL: 'http://localhost:5173',
 		browserName: 'chromium',
@@ -16,7 +17,7 @@ export default defineConfig({
 	},
 	webServer: [
 		{
-			command: 'powershell -ExecutionPolicy Bypass -File ../scripts/start-test-backend.ps1',
+			command: 'powershell -ExecutionPolicy Bypass -File ../scripts/start-test-backend.ps1 -PrepareStubModel',
 			url: 'http://localhost:8000/up',
 			reuseExistingServer: false,
 			timeout: 30000

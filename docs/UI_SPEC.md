@@ -8,7 +8,7 @@ Wireframe berbentuk pratinjau pernah ditinjau pengguna; file visual asli tidak d
 - Judul halaman: `<Nama halaman> | Lendara`, misalnya `Masuk | Lendara` atau `Pengajuan Saya | Lendara`; judul bawaan aplikasi `Lendara`.
 - Metadata deskripsi aplikasi: `Lendara adalah prototipe akademik pengajuan pinjaman dengan deteksi anomali dan persetujuan berjenjang.` Gunakan nama Lendara juga pada metadata berbagi atau manifest jika ditambahkan.
 - Judul akademik tetap **Rancang Bangun Sistem Pengajuan Pinjaman Berbasis Web dengan Deteksi Anomali dan Persetujuan Berjenjang** pada laporan dan dokumentasi akademik.
-- Frontend menyediakan masuk/daftar, status sesi, beranda akun, dan `/customer` untuk profil/draf/dokumen nasabah. Profil, simpan draf parsial, daftar/filter/pagination, status aktif, konfirmasi hapus, serta dokumen privat dan pemulihan koneksi telah tersedia. Pengiriman dan peninjauan internal masih tahap berikutnya; hasil uji aktual mengikuti PROGRESS. Tidak ada autentikasi SSR atau store data nasabah global server pada irisan ini.
+- Frontend menyediakan masuk/daftar, status sesi, beranda akun, `/customer` untuk profil/draf/dokumen, serta `/customer/applications/{id}` untuk tinjau/kirim/arsip/riwayat nasabah. Peninjauan internal masih tahap berikutnya; hasil uji aktual mengikuti PROGRESS. Tidak ada autentikasi SSR atau store data nasabah global server pada irisan ini.
 
 ## Halaman
 
@@ -34,5 +34,7 @@ Wireframe berbentuk pratinjau pernah ditinjau pengguna; file visual asli tidak d
 - 401/419 arahkan login atau pemulihan CSRF sesuai kasus; jangan menghapus isian draf diam-diam. Jangan cache data nasabah lintas akun di SSR/store global.
 - Backend adalah otoritas untuk semua izin/status, bukan tampilan tombol.
 
-Panel dokumen pada `/customer` menampilkan jenis wajib/opsional, versi terkini, nama, ukuran, waktu WIB, serta unduh melalui API berizin. Form unggah satu file PDF/JPG/JPEG/PNG maksimal 5 MB hanya untuk draft/revision_required. Versi lama dipertahankan; belum ada pemilih arsip/snapshot pada UI. Error field 422, ukuran 413, sesi, serta jaringan ditampilkan. Respons upload tidak pasti mengunci mutasi sampai data dibaca ulang; tidak ada replay POST. Panel dan kontrol dapat digunakan pada lebar 320px.
+Panel dokumen pada `/customer` menampilkan jenis wajib/opsional, versi terkini, nama, ukuran, waktu WIB, serta unduh melalui API berizin. Form unggah satu file PDF/JPG/JPEG/PNG maksimal 5 MB hanya untuk draft/revision_required. Versi lama dipertahankan dan dokumen per snapshot tersedia pada halaman arsip. Error field 422, ukuran 413, sesi, serta jaringan ditampilkan. Respons upload tidak pasti mengunci mutasi sampai data dibaca ulang; tidak ada replay POST. Panel dan kontrol dapat digunakan pada lebar 320px.
+
+Halaman tinjau memakai **data tersimpan**, tanpa menyimpan isian draf otomatis. Tautan tersedia dari draf aktif dan setiap baris pengajuan (termasuk final). Dialog konfirmasi wajib dicentang; label kirim ulang hanya pada revision_required. Backend menentukan kelengkapan/status/pointer. Error field profil/keuangan/dokumen ditampilkan dengan tautan untuk melengkapi. Respons 202 terputus atau konflik mengunci tombol kirim sampai status dibaca ulang. Arsip berpaginasi memilih versi dan mengunduh dokumen yang ditautkan saat kirim; profil terbaru tidak menimpa identitas snapshot. Riwayat hanya status/waktu/alasan revisi publik. Tidak ada panel atau detail hasil anomali pada nasabah. Desktop dan 320px diuji; UI kirim ulang tersedia tetapi alur browser revisi nyata menunggu API/UI verifikator.
 

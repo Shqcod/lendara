@@ -2,7 +2,7 @@
 
 **Lendara** adalah nama produk dengan folder utama `lendara`. Judul akademik proyek: **Rancang Bangun Sistem Pengajuan Pinjaman Berbasis Web dengan Deteksi Anomali dan Persetujuan Berjenjang**.
 
-Laravel 12 dan SvelteKit TypeScript menyediakan autentikasi cookie Sanctum, profil nasabah, pembuatan/simpan/daftar/hapus draf, serta unggah versi/daftar/unduh dokumen privat nasabah. **Schema 14 tabel domain, profil/draf, dan dokumen nasabah terverifikasi melalui MySQL nyata dan browser Chrome**; rincian pengujian ada di PROGRESS. Pengiriman snapshot, akses dokumen internal sesuai tahap, persetujuan berjenjang, dan model terlatih belum selesai. FastAPI masih stub; jangan menyamakannya dengan evaluasi ML.
+Laravel 12 dan SvelteKit TypeScript menyediakan autentikasi cookie Sanctum, profil/draf/dokumen privat, tinjau/kirim, arsip snapshot, serta riwayat status nasabah. Pengiriman atomik membuat pemeriksaan pada database queue dengan deadline dan hasil kondisional. **Irisan nasabah terverifikasi melalui MySQL nyata dan browser Chrome**; rincian ada di PROGRESS. Backend kirim ulang diuji dengan status revisi fixture; alur revisi browser, akses internal, claim/verifikasi/persetujuan, retry manual, dan model terlatih belum selesai. FastAPI masih stub; jangan menyamakannya dengan evaluasi ML.
 
 Lihat [panduan setup dan pengujian](docs/SETUP.md) serta [status nyata](docs/PROGRESS.md). Node sistem 22.13.1 tetap; frontend memakai Node 22.23.4 portable di `.tools/` melalui `scripts/frontend.ps1` karena scaffold SvelteKit 3 memerlukan Node minimal 22.17. Dependensi dan lockfile disertakan; `.tools/`, vendor, node_modules, dan rahasia lokal diabaikan Git.
 
@@ -47,17 +47,19 @@ start-ml.ps1 membuat .env lokal dengan kunci acak bila belum ada, lalu bind Fast
 | Database | MySQL Laragon, port 3306 |
 | Backend (setelah konfigurasi DB) | dari root: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` |
 | Frontend | dari root: `powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev` |
-| Queue (setelah migration/setup) | di backend: `php artisan queue:work --tries=1 --sleep=1 --timeout=0` pada Windows |
+| Queue (setelah migration/setup) | di backend: `php artisan queue:work --queue=predictions,document-cleanup --tries=1 --sleep=1 --timeout=0` pada Windows |
 | Scheduler (setelah jadwal ditulis) | di backend: `php artisan schedule:work` |
 | FastAPI stub | dari root: skrip start-ml.ps1 |
 
 Backend dapat diakses browser di http://localhost:8000 walau bind 127.0.0.1. Browser frontend/API sama-sama gunakan localhost; jangan mencampur localhost dengan 127.0.0.1 pada origin cookie. Host 127.0.0.1 dipakai untuk komunikasi internal Laravel–FastAPI.
 
-Setelah masuk sebagai nasabah, pilih **Buka ruang nasabah** untuk menuju `/customer`. Profil dan draf boleh disimpan sebagian. Maksimal satu pengajuan aktif; penghapusan hanya untuk draf yang belum pernah dikirim, dengan konfirmasi. Panel dokumen menyediakan unggah satu berkas fiktif PDF/JPG/JPEG/PNG maksimal 5 MB, versi terkini, dan unduh privat. Mengunggah versi baru mempertahankan berkas lama. Pengiriman belum diaktifkan.
+Setelah masuk sebagai nasabah, pilih **Buka ruang nasabah** untuk menuju `/customer`. Profil dan draf boleh disimpan sebagian. Maksimal satu pengajuan aktif; penghapusan hanya untuk draf yang belum pernah dikirim, dengan konfirmasi. Panel dokumen menyediakan unggah satu berkas fiktif PDF/JPG/JPEG/PNG maksimal 5 MB, versi terkini, dan unduh privat. Mengunggah versi baru mempertahankan berkas lama. Simpan perubahan, lalu pilih **Tinjau dan lihat pengiriman** untuk meninjau, mengonfirmasi kirim, melihat arsip versi/dokumen, dan riwayat status.
+
+Pengiriman memerlukan model aktif yang sesuai; jika belum siap, data kerja tetap tersimpan dan API mengembalikan 503. Untuk pengembangan lokal **mode stub**, dari backend jalankan secara eksplisit `php artisan ml:register-stub --activate` bila ingin mengaktifkan stub-v0. Perintah menolak mengganti model aktif lain dan tidak berlaku pada demo/production. Tidak ada aktivasi database pengembangan otomatis. Jalankan worker dan scheduler sesuai SETUP; kunci ML diatur lokal tanpa membagikannya ke chat.
 
 Helper backend membatasi upload PHP 5M dan post 8M hanya pada proses server, tanpa mengubah php.ini atau .env. Webserver demo/deployment harus menyelaraskan batas yang sama; rincian 413/422 di SETUP.
 
-Queue Windows: `--timeout=0` bukan pengamanan timeout. Deadline database, HTTP timeout, scheduler, dan pengaman duplikasi harus diimplementasikan. Baca ENVIRONMENT. Runtime Linux dengan PCNTL diperlukan untuk menguji penghentian worker paksa sebagaimana rencana 30 detik.
+Queue Windows: `--timeout=0` bukan pengamanan terminasi. Deadline database, HTTP timeout, scheduler, dan pengaman efek DB duplikat kini tersedia. Baca ENVIRONMENT. Runtime Linux dengan PCNTL diperlukan untuk menguji penghentian worker paksa sebagaimana rencana 30 detik.
 
 ## Database
 

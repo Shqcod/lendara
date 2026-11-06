@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
-use Tests\Support\DomainFixtures;
+use Tests\Support\SubmissionFixtures;
 use Tests\TestCase;
 
 class DomainConcurrencyTest extends TestCase
 {
-    use DomainFixtures;
+    use SubmissionFixtures;
 
     // Intentionally no DatabaseTransactions: both connections need committed fixtures.
     // Unique synthetic records stay in the test database; no user data is cleaned up.
@@ -109,5 +109,18 @@ class DomainConcurrencyTest extends TestCase
             $this->assertSame($row->file_hash, hash('sha256', Storage::disk('local')->get($row->storage_path)));
         }
         $this->assertSame(2, DB::table('activity_logs')->where('actor_id', $customer->id)->where('action', 'document_version.created')->count());
+    }
+
+    public function test_concurrent_submissions_commit_one_snapshot_check_history_and_submission_log(): void
+    {
+        $customer = User::factory()->create();
+        $application = $this->completeApplication($customer);
+        $results = $this->race('submission', $customer->id, $application);
+        $this->assertSame(['created', 'SUBMISSION_VERSION_CONFLICT'], array_column($results, 'result'));
+        $submission = DB::table('application_submissions')->where('application_id', $application)->sole();
+        $this->assertSame(1, $submission->version_number);
+        $this->assertSame(1, DB::table('anomaly_checks')->where('submission_id', $submission->id)->count());
+        $this->assertSame(1, DB::table('application_status_histories')->where('application_id', $application)->count());
+        $this->assertSame(1, DB::table('activity_logs')->where('actor_id', $customer->id)->where('action', 'application_submission.created')->count());
     }
 }

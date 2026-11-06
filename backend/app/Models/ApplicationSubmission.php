@@ -13,7 +13,9 @@ class ApplicationSubmission extends Model
 
     protected function casts(): array
     {
-        return ['customer_snapshot' => 'array', 'submitted_at' => 'immutable_datetime'];
+        return ['customer_snapshot' => 'array', 'submitted_at' => 'immutable_datetime', 'version_number' => 'integer',
+            'loan_amount' => 'decimal:2', 'monthly_income' => 'decimal:2', 'monthly_expenses' => 'decimal:2',
+            'existing_installments' => 'decimal:2', 'tenor_months' => 'integer'];
     }
 
     protected static function booted(): void

@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; keberadaan tabel tidak berarti alur snapshot, dokumen, pemeriksaan, dan persetujuan sudah diimplementasikan. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/dokumen/pengiriman dan job prediksi tersedia, tetapi persetujuan/internal belum diimplementasikan. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -58,7 +58,7 @@ Implementasi irisan draf memakai `CustomerWorkspace` dan `CleanupDraftDocuments`
 
 `CustomerDocuments` mengunci user → aplikasi → jenis dokumen → versi terkini untuk mengalokasikan versi, menyimpan file baru, lalu metadata dan audit dalam transaksi. Unique(application_id,document_type_id,version_number) tetap pengaman SQL. Path server `loan-documents/<application_id>/<uuid>.<extension>` berada pada disk local privat; nama asli hanya metadata/attachment, bukan path. Hash SHA256 dan ukuran disimpan dari file unggahan. Model DocumentVersion menolak update instance; query SQL langsung tetap memerlukan pengamanan grant runtime sesuai target di atas.
 
-File lama dan submission_documents tidak berubah saat upload revisi. Uji memakai snapshot fixture untuk membuktikan tautan lama tetap; endpoint submit/resend belum tersedia. Dua proses dengan transaksi bertumpang tindih membuktikan dua upload pengajuan/jenis sama commit sebagai versi 1/2 dengan path berbeda dan hash cocok.
+File lama dan submission_documents tidak berubah saat upload revisi. Endpoint submit/resend kini membuat tautan snapshot; pengujian kirim ulang membuktikan tautan lama tetap setelah dokumen/profil/keuangan berubah. Dua proses dengan transaksi bertumpang tindih membuktikan dua upload pengajuan/jenis sama commit sebagai versi 1/2 dengan path berbeda dan hash cocok.
 
 Disk dan MySQL bukan satu transaksi atomik. Jika transaksi upload gagal setelah file ditulis, service memeriksa ulang keberadaan referensi metadata sebelum menjadwalkan CleanupDraftDocuments untuk file baru yang tidak direferensikan. Kegagalan penjadwalan dicatat aman tanpa isi/path berkas. Crash proses pada celah write/commit/cleanup atau koneksi DB yang tidak dapat dipastikan dapat menyisakan orphan: rekonsiliasi berkas privat dengan masa tenggang/konfirmasi masih pekerjaan berikutnya, belum diuji dengan penghentian paksa. Jangan menghapus berdasarkan dugaan kegagalan commit atau menjalankan pembersihan massal.
 
@@ -67,6 +67,16 @@ Uji rollback membuktikan metadata/file tetap ada dan job batal. Uji commit memba
 `DocumentTypeSeeder` menambahkan D01–D04 yang belum ada, idempoten, dan melaporkan konflik konfigurasi yang sudah ada tanpa menimpanya. Tidak ada seeder model aktif atau snapshot/pengajuan otomatis. Batas field API mengikuti kapasitas kolom; lihat API_CONTRACT untuk presisi string uang dan integer unsigned.
 
 Aturan izin runtime di atas tetap target pemisahan user DB migration/runtime; grant per tabel dan audit immutability SQL tingkat runtime belum dipasang pada sesi ini. Model ApplicationSubmission menolak update/delete instance dan profil/draf tidak mengubah snapshot lama. Jangan menyamakan pemeriksaan FK/unique dengan penegakan seluruh aturan transisi, append-only, atau otorisasi tahap internal.
+
+## Transaksi pengiriman dan hasil prediksi
+
+CustomerSubmissions mengunci user → aplikasi → profil → jenis aktif → versi dokumen → model aktif → versi pengiriman terakhir. Periksa pointer/status dan data tersimpan, alokasikan version_number dengan locking read, buat snapshot/tautan/check processing/history/audit, kemudian update current_submission_id/status dalam transaksi sama. Tidak ada perubahan schema atau migration tambahan pada irisan ini. Unique/FK tetap pengaman SQL. Pembuktian dua proses menghasilkan satu snapshot/check/history/log, permintaan kedua SUBMISSION_VERSION_CONFLICT.
+
+Callback DB afterCommit secara eksplisit membungkus dispatch database queue predictions. Kegagalan enqueue dicatat aman memakai ID check, lalu conditional fail; callback tidak melempar kegagalan enqueue sebagai batalnya pengiriman yang sudah commit. Jika proses/DB tidak tersedia, deadline tetap dapat dipindai scheduler. Queue job persisten dan snapshot/check dibaca dari koneksi observer independen setelah commit pada pengujian.
+
+RunPrediction memakai lock eksekusi per check pada cache database (60 detik), tries=1, timeout job 30 detik. Context dibaca lalu HTTP dijalankan tanpa transaksi; handler menolak bila sudah berada dalam transaksi. Timeout HTTP min(20, konfigurasi timeout, sisa deadline-5); budget tidak cukup langsung failed. Hasil disimpan lewat transaksi pendek dengan lock aplikasi → check, memeriksa status processing, deadline, snapshot terkini, identitas/schema/model/source, skor finite dan konsistensi tanda. Respons lama/duplikat tidak mengubah terminal state dan menghasilkan audit ID/reason aman. Tidak ada perubahan status pengajuan otomatis oleh hasil model.
+
+Command anomalies:expire menandai processing melewati deadline sebagai failed secara kondisional, dijadwalkan setiap menit dengan lingkungan aplikasi diteruskan eksplisit ke subprocess. Worker/scheduler memakai DB runtime yang sama dengan aplikasi; testing dibuktikan pada kkp_pinjaman_test. Job yang hilang dapat dipulihkan sebagai failed, bukan inference otomatis ulang. Ini jaminan efek DB kondisional, bukan exactly-once HTTP atau bukti penghentian worker POSIX pada Windows.
 
 ## Pendukung Laravel
 

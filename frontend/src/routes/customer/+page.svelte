@@ -230,7 +230,7 @@
 						{#if active.status === 'draft' && active.current_submission_id === null}<button class="danger" onclick={() => dialog.showModal()} disabled={blocked}>Hapus draf</button>{/if}
 					{:else if active}<p class="muted">Pengajuan sedang ditinjau. Data keuangan hanya dapat diubah saat draf atau diminta revisi.</p>
 					{:else}<p class="muted">Buat draf terlebih dahulu untuk mulai mengisi pinjaman dan keuangan.</p>{/if}
-					<div class="next-steps"><span>04 · Tinjau &amp; kirim</span><p>Pengiriman untuk peninjauan tersedia pada tahap pengembangan berikutnya.</p></div>
+					<div class="next-steps"><span>04 · Tinjau &amp; kirim</span>{#if active}<p>Simpan perubahan profil dan draf sebelum meninjau data pengiriman.</p><a href={`/customer/applications/${active.id}`}>Tinjau dan lihat pengiriman</a>{:else}<p>Buat draf untuk menyiapkan pengiriman.</p>{/if}</div>
 				</section>
 			</div>
 			{#if active}{#key `${user?.id}-${active.id}`}
@@ -238,7 +238,7 @@
 			{/key}{/if}
 			<section class="panel history" aria-labelledby="history-title">
 				<div class="history-heading"><div><p class="eyebrow">PENGAJUAN ANDA</p><h2 id="history-title">Daftar pengajuan</h2></div><div><label for="status-filter">Filter status</label><select id="status-filter" bind:value={filter} onchange={() => loadHistory()} disabled={busy}><option value="">Semua status</option>{#each Object.entries(statusLabels) as [status, label]}<option value={status}>{label}</option>{/each}</select></div></div>
-				{#if history?.data.length}<div class="table-scroll"><table><thead><tr><th>Nomor</th><th>Status</th><th>Jumlah pinjaman</th><th>Disimpan (WIB)</th></tr></thead><tbody>{#each history.data as row}<tr><td class="reference">{row.application_number}</td><td><span class="status-badge">{statusLabels[row.status]}</span></td><td>{rupiah(row.loan_amount)}</td><td>{timeWib(row.updated_at)}</td></tr>{/each}</tbody></table></div>{:else}<p class="muted">Belum ada pengajuan pada status ini.</p>{/if}
+				{#if history?.data.length}<div class="table-scroll"><table><thead><tr><th>Nomor</th><th>Status</th><th>Jumlah pinjaman</th><th>Disimpan (WIB)</th><th>Pengiriman</th></tr></thead><tbody>{#each history.data as row}<tr><td class="reference">{row.application_number}</td><td><span class="status-badge">{statusLabels[row.status]}</span></td><td>{rupiah(row.loan_amount)}</td><td>{timeWib(row.updated_at)}</td><td><a href={`/customer/applications/${row.id}`}>Buka pengajuan</a></td></tr>{/each}</tbody></table></div>{:else}<p class="muted">Belum ada pengajuan pada status ini.</p>{/if}
 				{#if history}<div class="pagination"><span>{history.meta.total} pengajuan · Halaman {history.meta.current_page} dari {history.meta.last_page}</span><div><button onclick={() => loadHistory(page - 1)} disabled={busy || page <= 1}>Sebelumnya</button><button onclick={() => loadHistory(page + 1)} disabled={busy || page >= history.meta.last_page}>Berikutnya</button></div></div>{/if}
 			</section>
 		{/if}

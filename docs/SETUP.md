@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup autentikasi, schema 14 tabel domain, profil/draf, dan dokumen privat nasabah sudah lulus pengujian MySQL nyata dan browser Chrome. Pengiriman snapshot, akses dokumen internal sesuai tahap, peninjauan berjenjang, dan model asli masih tahap berikutnya.
+Status aktual ada di PROGRESS.md. Setup autentikasi, schema 14 tabel, profil/draf/dokumen, dan pengiriman/arsip/riwayat nasabah lulus MySQL nyata dan Chrome. Job queue prediksi, conditional persistence, dan deadline scheduler tersedia. Akses dokumen internal, claim/verifikasi/persetujuan, retry manual, serta model asli masih tahap berikutnya; browser revisi/kirim ulang menunggu internal.
 
 ## Runtime
 
@@ -46,7 +46,7 @@ Terminal root untuk frontend:
 powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev
 ```
 
-Terminal root untuk backend: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1`. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil, simpan draf parsial, daftar/filter/pagination, konfirmasi hapus, serta unggah/daftar/unduh dokumen privat. Pengiriman masih tahap berikutnya.
+Terminal root untuk backend: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1`. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil/draf/dokumen, lalu **Tinjau dan lihat pengiriman** menuju `/customer/applications/{id}`. Halaman tinjau memakai data tersimpan; konfirmasi diperlukan sebelum kirim, dan arsip menyimpan identitas/keuangan/berkas per versi. Uang publik tetap string desimal.
 
 Helper menjalankan PHP built-in server pada 127.0.0.1:8000 dari direktori public dengan router bawaan Laravel. Parameter proses upload_max_filesize=5M, post_max_size=8M, display_errors=0; log error PHP tetap aktif. Ini tidak mengubah php.ini global (Laragon saat diperiksa mengizinkan 2G) atau .env. Pada server demo/deployment, samakan batas PHP dan webserver/reverse proxy; pengujian lokal bukan bukti konfigurasi deployment. File tepat 5.242.880 byte diterima. File lebih besar mendapat 422 file; total POST lebih dari 8M mendapat 413 PAYLOAD_TOO_LARGE sebelum parsing field. Validasi isi server tetap wajib walau UI sudah membatasi ukuran/ekstensi.
 
@@ -57,6 +57,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-ml.ps1
 ```
 
 Terminal root lain: `powershell -ExecutionPolicy Bypass -File .\scripts\sync-ml-key.ps1`, lalu dari backend `php artisan ml:smoke`. Sinkronisasi hanya mengisi kunci backend yang kosong dari .env ML lokal; kunci yang telah diisi dipertahankan dan nilainya tidak dicetak. Smoke menggunakan fixtures, tidak membuat pengajuan/check database dan tidak membuktikan model terlatih atau deadline job domain.
+
+Untuk pengiriman pada **pengembangan lokal mode stub**, registrasi/aktivasi model dilakukan eksplisit dari backend, bukan saat startup aplikasi:
+
+```powershell
+php artisan ml:register-stub
+php artisan ml:register-stub --activate
+php artisan queue:work --queue=predictions,document-cleanup --tries=1 --sleep=1 --timeout=0
+php artisan schedule:work
+```
+
+Perintah pertama hanya mendaftarkan metadata kode stub yang nyata dan tidak aktif secara otomatis. --activate menolak model aktif lain, metadata kode yang berbeda, mode model, atau lingkungan selain local/testing. Baris stub memakai trained=false, code://..., dan hash kode, bukan artefak terlatih. Database dev tidak diaktifkan otomatis pada sesi implementasi. Siapkan worker dan scheduler pada terminal berbeda; field key tetap lokal. Pada testing tambahkan --env=testing dan pastikan guard efektif sebelum mutasi. Harness Chrome memakai -PrepareStubModel setelah guard DB test untuk fixture stub-v0; tidak mengganti model aktif lain.
+
+RunPrediction memakai database queue predictions, cache database lock per check, HTTP tanpa retry maksimal min(20,sisa-5), dan deadline 120 detik. Enqueue sesudah commit yang gagal tetap mengembalikan 202/snapshot tersimpan. Scheduler anomalies:expire memulihkan processing lewat deadline sebagai failed, tanpa mengubah status bisnis atau otomatis mengulang inference. Queue/cache tables perlu izin DB runtime yang sesuai. PCNTL/kill worker POSIX tetap belum dibuktikan; --timeout=0 Windows bukan jaminan terminasi, dan timeout job 30 detik hanya efektif pada runtime yang mendukungnya. ML_DEADLINE_SECONDS pada contoh lama belum dibaca runtime: deadline domain tetap 120 sesuai kontrak.
 
 ## Verifikasi
 
@@ -93,7 +106,7 @@ Dari ml-service: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
 
 Queue, pengujian pada DB terpisah: kirim `php artisan system:queue-probe --env=testing`, simpan ID yang tercetak, jalankan `php artisan queue:work --env=testing --once --tries=1 --timeout=0`, lalu `php artisan system:queue-probe <ID> --env=testing` harus `completed`. Ini job diagnostik tanpa data pengguna.
 
-Scheduler: `php artisan schedule:run --env=testing` lalu `php artisan system:scheduler-status --env=testing` harus menampilkan heartbeat UTC baru. `schedule:work` dipakai untuk proses lokal berkelanjutan. Scheduler ini baru heartbeat; pemulihan deadline pemeriksaan anomali belum diimplementasikan. PCNTL timeout worker belum terbukti pada Windows. Dalam sandbox Windows pada sesi ini, penutupan pohon proses Playwright memerlukan izin proses di luar sandbox; pengulangan dengan izin tersebut selesai dengan exit code 0. Ini bukan penonaktifan TLS/CSRF atau pengamanan aplikasi.
+Scheduler: `php artisan schedule:run --env=testing` menjalankan heartbeat dan anomalies:expire; subprocess expiry meneruskan --env secara eksplisit dan sudah diuji memakai check expired pada DB test. system:scheduler-status --env=testing membaca heartbeat UTC. schedule:work dipakai untuk proses lokal berkelanjutan. PCNTL timeout worker belum terbukti pada Windows. Dalam sandbox Windows, penutupan pohon proses Playwright memerlukan izin proses di luar sandbox; pengulangan dengan izin tersebut selesai dengan exit code 0. Ini bukan penonaktifan TLS/CSRF atau pengamanan aplikasi.
 
 ## Audit yang masih terbuka
 

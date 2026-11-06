@@ -2,6 +2,7 @@
 
 use App\Exceptions\DomainError;
 use App\Services\CustomerDocuments;
+use App\Services\CustomerSubmissions;
 use App\Services\CustomerWorkspace;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -42,6 +43,8 @@ try {
     }
     if ($mode === 'draft') {
         app(CustomerWorkspace::class)->createDraft((int) $actor, []);
+    } elseif ($mode === 'submission') {
+        app(CustomerSubmissions::class)->submit((int) $actor, (int) $application, null);
     } elseif ($mode === 'document') {
         $file = new UploadedFile($directory.'/fiktif.pdf', 'fiktif.pdf', 'application/pdf', null, true);
         app(CustomerDocuments::class)->upload((int) $actor, (int) $application, (int) $submission, $file);

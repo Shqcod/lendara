@@ -39,6 +39,14 @@ Snapshot + check processing + deadline 120 detik dibuat atomik. Job tries=1 dan 
 
 Scheduler setiap menit menandai processing lewat deadline sebagai failed. Tombol retry belum aktif sampai failed. Percobaan manual membuat attempt baru dalam transaksi parent-lock. Job lama/duplikat tidak boleh mengubah attempt baru. Pengaman eksekusi terdistribusi per check ID tidak menggantikan conditional write dan unique index. At-most-one effect pada DB, bukan klaim exactly-once inference. Lihat ENVIRONMENT untuk keterbatasan worker Windows.
 
+## Status integrasi Laravel
+
+Pengiriman nasabah kini membuat snapshot dan attempt 1 processing atomik, memin model aktif, lalu enqueue RunPrediction pada database queue predictions setelah commit. Conditional persistence/deadline serta command anomalies:expire setiap menit tersedia. Retry manual masih menunggu endpoint verifikator pemegang tugas; tidak ada retry HTTP/job otomatis. Uji mencakup respons lewat deadline, terminal/duplikat, identitas/model/skor invalid, snapshot lama, lock eksekusi database, dan scheduler subprocess. Satu alur database queue → worker → FastAPI stub loopback → succeeded sudah diuji; bukan evaluasi model asli atau proof kill worker Linux.
+
+`php artisan ml:register-stub` adalah perintah eksplisit local/testing mode stub: mendaftarkan stub-v0 tidak aktif, hash kode app/main.py yang nyata, artifact_path code://ml-service/app/main.py, parameters.source=stub dan trained=false. Tambahkan --activate hanya jika memang ingin mengaktifkan dan tidak ada model aktif lain. Named lock MySQL + unique marker melindungi aktivasi; perintah menolak mengganti model aktif lain/metadata kode yang berubah, serta menolak production/demo atau mode model. Nilai contamination 0.10000 hanya memenuhi schema metadata stub, bukan hasil pemilihan eksperimen. Tidak membuat artefak/training palsu.
+
+Pengiriman tanpa model aktif yang sesuai menghasilkan 503 tanpa snapshot parsial. Tidak mengecek /ready melalui HTTP di dalam transaksi. Ketersediaan versi layanan diperiksa saat job memanggil model yang dipin; kegagalan layanan tidak mengubah status bisnis pengajuan. Demo akhir masih memerlukan model asli dan pemeriksaan readiness sesuai target di atas.
+
 ## Eksperimen model (belum diimplementasikan)
 
 - Mulai sejak tahap 3. Generator deterministik dengan random seed, distribusi realistis yang terdokumentasi, jumlah data, rentang, korelasi, dan daftar anomali injeksi.

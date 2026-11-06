@@ -4,6 +4,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SubmissionController;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\RequireCustomer;
 use App\Http\Middleware\RequireSpaSession;
@@ -20,6 +21,10 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::middleware(RequireCustomer::class)->group(function () {
+        Route::post('/applications/{application}/submissions', [SubmissionController::class, 'store'])->whereNumber('application');
+        Route::get('/applications/{application}/submissions', [SubmissionController::class, 'index'])->whereNumber('application');
+        Route::get('/applications/{application}/submissions/{submission}', [SubmissionController::class, 'show'])->whereNumber(['application', 'submission']);
+        Route::get('/applications/{application}/status-histories', [SubmissionController::class, 'histories'])->whereNumber('application');
         Route::get('/document-types', [DocumentController::class, 'types']);
         Route::get('/applications/{application}/documents', [DocumentController::class, 'index'])->whereNumber('application');
         Route::post('/applications/{application}/documents', [DocumentController::class, 'store'])->whereNumber('application');
