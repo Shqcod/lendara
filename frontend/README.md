@@ -1,6 +1,6 @@
 # Lendara — frontend
 
-SvelteKit 3, Svelte 5, TypeScript 6. Halaman awal menyediakan daftar/masuk, pemeriksaan sesi, dan keluar. `/customer` menyediakan profil, simpan draf sebagian, daftar/filter/pagination, serta konfirmasi hapus. Unggah/pengiriman belum tersedia. API Laravel berada di layanan `backend/`.
+SvelteKit 3, Svelte 5, TypeScript 6. Halaman awal menyediakan daftar/masuk, pemeriksaan sesi, dan keluar. `/customer` menyediakan profil, simpan draf sebagian, daftar/filter/pagination, konfirmasi hapus, serta unggah versi/daftar/unduh dokumen privat nasabah. Unggah satu berkas fiktif PDF/JPG/JPEG/PNG maksimal 5 MB; versi lama dipertahankan. Pengiriman belum tersedia. API Laravel berada di layanan `backend/`.
 
 Node seri 22 minimal 22.17 diperlukan. Dari root proyek gunakan `powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev` untuk memilih runtime lokal tanpa mengubah Node sistem.
 

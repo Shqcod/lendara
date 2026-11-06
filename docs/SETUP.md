@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup autentikasi, schema 14 tabel domain, dan irisan profil/draf nasabah sudah lulus pengujian MySQL nyata dan browser Chrome. Upload dokumen, pengiriman snapshot, peninjauan berjenjang, dan model asli masih tahap berikutnya.
+Status aktual ada di PROGRESS.md. Setup autentikasi, schema 14 tabel domain, profil/draf, dan dokumen privat nasabah sudah lulus pengujian MySQL nyata dan browser Chrome. Pengiriman snapshot, akses dokumen internal sesuai tahap, peninjauan berjenjang, dan model asli masih tahap berikutnya.
 
 ## Runtime
 
@@ -46,7 +46,9 @@ Terminal root untuk frontend:
 powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev
 ```
 
-Terminal backend: `php artisan serve --host=127.0.0.1 --port=8000`. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil, simpan draf parsial, daftar/filter/pagination, dan konfirmasi hapus. UI menandai dokumen dan pengiriman sebagai tahap pengembangan berikutnya.
+Terminal root untuk backend: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1`. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil, simpan draf parsial, daftar/filter/pagination, konfirmasi hapus, serta unggah/daftar/unduh dokumen privat. Pengiriman masih tahap berikutnya.
+
+Helper menjalankan PHP built-in server pada 127.0.0.1:8000 dari direktori public dengan router bawaan Laravel. Parameter proses upload_max_filesize=5M, post_max_size=8M, display_errors=0; log error PHP tetap aktif. Ini tidak mengubah php.ini global (Laragon saat diperiksa mengizinkan 2G) atau .env. Pada server demo/deployment, samakan batas PHP dan webserver/reverse proxy; pengujian lokal bukan bukti konfigurasi deployment. File tepat 5.242.880 byte diterima. File lebih besar mendapat 422 file; total POST lebih dari 8M mendapat 413 PAYLOAD_TOO_LARGE sebelum parsing field. Validasi isi server tetap wajib walau UI sudah membatasi ukuran/ekstensi.
 
 Terminal root untuk ML:
 
@@ -81,7 +83,11 @@ Trace, video, dan screenshot otomatis dimatikan untuk menghindari penyimpanan kr
 
 Screenshot ruang nasabah diambil setelah form login tidak lagi terlihat dan hanya memuat identitas/keuangan fiktif yang ditandai pada UI. Hasil di `docs/validation/customer-draft-desktop.png` dan `customer-draft-mobile-320.png`. Tidak mengambil screenshot password, token, atau identitas nyata.
 
-Worker pembersihan dokumen draf menggunakan `php artisan queue:work --queue=document-cleanup --tries=3 --timeout=0`; untuk pembuktian/pengujian gunakan `--env=testing`. Row job dan penghapusan metadata berada dalam transaksi DB sama. Jangan membersihkan file secara manual sebelum commit. Prefix privat server `loan-documents/` akan dipakai tahap upload; endpoint upload/unduh belum diimplementasikan.
+Worker pembersihan dokumen draf menggunakan `php artisan queue:work --queue=document-cleanup --tries=3 --timeout=0`; untuk pembuktian/pengujian gunakan `--env=testing`. Row job dan penghapusan metadata berada dalam transaksi DB sama. Jangan membersihkan file secara manual sebelum commit. Upload/unduh memakai disk local privat dengan prefix server `loan-documents/`; jangan menjalankan storage:link untuk dokumen. Cleanup juga menangani file upload yang transaksinya rollback setelah pengecekan referensi. Crash orphan/DB tidak dapat diperiksa masih perlu rekonsiliasi terpisah, belum ada pembersihan massal otomatis.
+
+Jalankan PHPUnit dan browser berurutan, karena keduanya memakai DB test yang sama; transaksi fixture suite dapat memicu deadlock bila dijalankan bersamaan. Skenario documents.spec.ts menambah upload 5 MB, validasi isi, penggantian versi, byte unduhan, akses versi lama, 413 server nyata, respons upload terputus tanpa replay, serta screenshot panel desktop/320px. Hanya skenario dokumen: `powershell -ExecutionPolicy Bypass -Command "& .\scripts\frontend.ps1 -NpmArgs @('run', 'test:e2e', '--', 'documents.spec.ts')"`.
+
+Screenshot panel dokumen `docs/validation/documents-desktop.png` dan `documents-mobile-320.png` hanya memuat nama berkas fiktif/metadata, tanpa kredensial atau path privat. Database test yang dipertahankan dapat berisi jenis dokumen fixture tambahan dari pengujian commit/konkurensi; UI menampilkan data konfigurasi server apa adanya. Database pengembangan tidak diubah agar menyerupai fixture tersebut.
 
 Dari ml-service: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
 

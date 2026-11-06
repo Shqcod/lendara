@@ -2,6 +2,8 @@
 
 return [
     'required' => ':attribute wajib diisi.',
+    'file' => ':attribute harus berupa berkas yang valid.',
+    'uploaded' => 'Berkas gagal diunggah. Periksa ukuran maksimal 5 MB dan coba lagi.',
     'string' => ':attribute harus berupa teks.',
     'email' => 'Format email tidak valid.',
     'max' => ['string' => ':attribute maksimal :max karakter.', 'numeric' => ':attribute maksimal :max.'],
@@ -17,5 +19,6 @@ return [
     'attributes' => [
         'name' => 'Nama', 'email' => 'Email', 'password' => 'Kata sandi',
         'role' => 'Peran', 'is_active' => 'Status akun',
+        'file' => 'Berkas', 'document_type_id' => 'Jenis dokumen',
     ],
 ];

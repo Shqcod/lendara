@@ -1,9 +1,11 @@
 <?php
 
 use App\Exceptions\DomainError;
+use App\Services\CustomerDocuments;
 use App\Services\CustomerWorkspace;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 // CLI-only worker for real, overlapping MySQL transactions. No credentials in argv/output.
@@ -40,6 +42,9 @@ try {
     }
     if ($mode === 'draft') {
         app(CustomerWorkspace::class)->createDraft((int) $actor, []);
+    } elseif ($mode === 'document') {
+        $file = new UploadedFile($directory.'/fiktif.pdf', 'fiktif.pdf', 'application/pdf', null, true);
+        app(CustomerDocuments::class)->upload((int) $actor, (int) $application, (int) $submission, $file);
     } elseif ($mode === 'assignment') {
         DB::table('assignments')->insert([
             'application_id' => (int) $application, 'submission_id' => (int) $submission,

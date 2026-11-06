@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\Support\DomainFixtures;
@@ -19,6 +20,9 @@ class DomainConcurrencyTest extends TestCase
     {
         $directory = storage_path('framework/testing/concurrency/'.Str::uuid());
         mkdir($directory, 0777, true);
+        if ($mode === 'document') {
+            file_put_contents($directory.'/fiktif.pdf', "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n");
+        }
         $processes = [];
         foreach (['a', 'b'] as $worker) {
             $processes[$worker] = new Process([
@@ -89,5 +93,21 @@ class DomainConcurrencyTest extends TestCase
         $this->assertSame(['created', 'unique_conflict'], array_column($results, 'result'));
         $this->assertSame(1062, $results[1]['mysql_code']);
         $this->assertSame(1, DB::table('assignments')->where('application_id', $application)->whereNull('ended_at')->count());
+    }
+
+    public function test_concurrent_document_uploads_allocate_distinct_versions_without_overwriting_files(): void
+    {
+        $customer = User::factory()->create();
+        $application = $this->loan($customer->id);
+        $type = DB::table('document_types')->insertGetId(['code' => 'T'.Str::upper(Str::random(8)), 'name' => 'Berkas Fiktif', 'is_required' => false, 'is_active' => true]);
+        $results = $this->race('document', $customer->id, $application, $type);
+        $this->assertSame(['created', 'created'], array_column($results, 'result'));
+        $rows = DB::table('document_versions')->where('application_id', $application)->orderBy('version_number')->get();
+        $this->assertSame([1, 2], $rows->pluck('version_number')->all());
+        $this->assertCount(2, $rows->pluck('storage_path')->unique());
+        foreach ($rows as $row) {
+            $this->assertSame($row->file_hash, hash('sha256', Storage::disk('local')->get($row->storage_path)));
+        }
+        $this->assertSame(2, DB::table('activity_logs')->where('actor_id', $customer->id)->where('action', 'document_version.created')->count());
     }
 }

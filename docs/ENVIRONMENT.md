@@ -33,6 +33,7 @@ Audit Composer sebelumnya mendeteksi GHSA-6prc-h956-hxjq pada dependensi interna
 - Browser mengirim credentials dan X-XSRF-TOKEN. SSR bila digunakan meneruskan cookie yang relevan dan Origin/Referer tepercaya; Set-Cookie dan mutasi SSR perlu pengujian eksplisit. Jangan meneruskan cookie ke host arbitrer.
 - APP_TIMEZONE/DB session UTC; tampilkan Asia/Jakarta.
 - PHP upload_max_filesize=5M, post_max_size minimal 8M untuk endpoint satu berkas; samakan server demo dan tangani 413.
+- php.ini Laragon saat diperiksa masih 2G/2G. Gunakan scripts/start-backend.ps1 untuk batas proses lokal 5M/8M tanpa menimpa konfigurasi global/.env; runner browser memakai helper sama pada DB test. Deployment/proxy perlu verifikasi tersendiri.
 
 ## Timeout dan Windows
 

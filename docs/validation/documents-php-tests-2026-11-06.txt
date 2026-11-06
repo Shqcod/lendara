@@ -1,0 +1,89 @@
+PASS  Tests\Unit\PasswordHashTest
+  ✓ passwords differing after 72 bytes do not authenticate as the same password                                  0.60s
+
+   PASS  Tests\Unit\PredictionClientTest
+  ✓ internal fixture uses private key and validates response                                                     0.06s
+  ✓ mismatched identity or sign is rejected                                                                      0.01s
+
+   PASS  Tests\Feature\AuthenticationTest
+  ✓ register creates only a customer without logging in                                                          0.37s
+  ✓ register rejects privileged fields and invalid password confirmation                                         0.03s
+  ✓ duplicate email has field validation and database constraint                                                 0.22s
+  ✓ each agreed role can login read safe identity and logout with data set #0                                    0.19s
+  ✓ each agreed role can login read safe identity and logout with data set #1                                    0.18s
+  ✓ each agreed role can login read safe identity and logout with data set #2                                    0.16s
+  ✓ each agreed role can login read safe identity and logout with data set #3                                    0.18s
+  ✓ each agreed role can login read safe identity and logout with data set #4                                    0.20s
+  ✓ wrong password and inactive account cannot login                                                             0.34s
+  ✓ inactive user loses access with existing session                                                             0.02s
+  ✓ bearer tokens cannot replace a browser session                                                               0.03s
+  ✓ login and registration are throttled                                                                         0.05s
+  ✓ only exact frontend origin receives credentialed cors headers                                                0.03s
+  ✓ mysql rejects an unknown role even when bypassing the model                                                  0.03s
+
+   PASS  Tests\Feature\CustomerDocumentsTest
+  ✓ uploads are versioned private and latest list does not leak storage or internal fields                       0.10s
+  ✓ old submission keeps its document after revision upload                                                      0.11s
+  ✓ cross customer guessing returns 404 before file validation                                                   0.08s
+  ✓ internal roles and anonymous cannot access customer document endpoints                                       0.11s
+  ✓ inactive customer cannot download                                                                            0.06s
+  ✓ upload rechecks active account inside transaction                                                            0.06s
+  ✓ upload is rejected in all non editable statuses but read remains available                                   0.12s
+  ✓ file content extension and exact five megabyte boundary                                                      0.24s
+  ✓ document types are explicit and inactive type and server fields are rejected                                 0.07s
+  ✓ large post is normalized to 413 json                                                                         0.05s
+  ✓ missing file is 404 and version instance cannot be updated                                                   0.05s
+  ✓ failed upload transaction preserves old version and enqueues compensating cleanup                            0.09s
+
+   PASS  Tests\Feature\CustomerWorkspaceTest
+  ✓ profile can be read without creating a row and saved partially                                               0.08s
+  ✓ profile validation and unique identity preserve the entire transaction                                       0.05s
+  ✓ customer routes require authentication and deny all internal roles                                           0.08s
+  ✓ draft can be incomplete and creation has a log without status history                                        0.05s
+  ✓ money keeps decimal precision and only type capacity is limited                                              0.10s
+  ✓ client cannot supply ownership status or internal results                                                    0.05s
+  ✓ cross customer detail edit delete and lists do not leak                                                      0.09s
+  ✓ forbidden workflow states cannot be edited or deleted                                                        0.08s
+  ✓ profile and revision edits do not mutate previous snapshot or expose internal notes                          0.12s
+  ✓ account and role are rechecked under lock during mutations                                                   0.05s
+  ✓ creation rolls back content and audit together                                                               0.04s
+  ✓ draft deletion keeps generic audit and does not create status history                                        0.09s
+  ✓ delete rollback preserves documents files and cancels persistent cleanup                                     0.05s
+PHPUnit effective connection: mysql / kkp_pinjaman_test / 8.0.30
+
+   PASS  Tests\Feature\DatabaseIsolationTest
+  ✓ phpunit effectively uses the separate mysql database                                                         0.03s
+MySQL concurrent draft: connections 708/709, results created/ACTIVE_APPLICATION_EXISTS
+MySQL concurrent assignment: connections 711/712, results created/unique_conflict
+MySQL concurrent document: connections 714/715, results created/created
+
+   PASS  Tests\Feature\DomainConcurrencyTest
+  ✓ concurrent draft creation commits one application and one creation log                                       0.73s
+  ✓ concurrent assignment inserts commit only one active assignment                                              0.53s
+  ✓ concurrent document uploads allocate distinct versions without overwriting files                             0.56s
+
+   PASS  Tests\Feature\DomainConstraintsTest
+  ✓ all fourteen domain tables use innodb and restrict foreign keys                                              0.05s
+  ✓ one active application includes draft and revision and final allows new one                                  0.04s
+  ✓ status and finance cannot bypass markers or checks                                                           0.04s
+  ✓ profile identity and user are unique even without api validation                                             0.03s
+  ✓ document type seeding is idempotent and never overwrites a conflict                                          0.12s
+  ✓ snapshot version is unique and current pointer must belong to application                                    0.05s
+  ✓ only one active assignment globally even across snapshots                                                    0.06s
+  ✓ assignment cannot reference snapshot from another application                                                0.05s
+  ✓ assignment and verification discriminators cannot free unique markers with invalid values                    0.03s
+  ✓ processing succeeded and attempt numbers are unique per snapshot                                             0.05s
+  ✓ check state and score consistency cannot be bypassed                                                         0.03s
+  ✓ only one active model and contamination is numeric in range                                                  0.02s
+  ✓ terminal verification is unique and requires valid assignment and check snapshot                             0.03s
+  ✓ decision level is unique and rejected notes cannot be null                                                   0.05s
+  ✓ history cannot point to foreign snapshot or have null from status                                            0.03s
+  ✓ document versions and submission document types are unique and restrict deletion                             0.03s
+
+   PASS  Tests\Feature\DraftCleanupTest
+  ✓ committed delete leaves a visible persistent cleanup job and idempotent file cleanup                         0.07s
+  ✓ cleanup failure is not silently treated as success                                                           0.04s
+  ✓ cleanup cannot escape the private document prefix                                                            0.03s
+
+  Tests:    65 passed (568 assertions)
+  Duration: 7.64s

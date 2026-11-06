@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\RequireCustomer;
@@ -19,6 +20,10 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::middleware(RequireCustomer::class)->group(function () {
+        Route::get('/document-types', [DocumentController::class, 'types']);
+        Route::get('/applications/{application}/documents', [DocumentController::class, 'index'])->whereNumber('application');
+        Route::post('/applications/{application}/documents', [DocumentController::class, 'store'])->whereNumber('application');
+        Route::get('/document-versions/{document}/download', [DocumentController::class, 'download'])->whereNumber('document');
         Route::get('/customer/profile', [ProfileController::class, 'show']);
         Route::patch('/customer/profile', [ProfileController::class, 'update']);
         Route::get('/applications', [ApplicationController::class, 'index']);

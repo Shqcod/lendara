@@ -43,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 403 => ['FORBIDDEN', 'Akses tidak diizinkan.'],
                 404 => ['NOT_FOUND', 'Data tidak ditemukan.'],
                 405 => ['METHOD_NOT_ALLOWED', 'Metode tidak diizinkan.'],
+                413 => ['PAYLOAD_TOO_LARGE', 'Unggahan terlalu besar. Maksimal satu berkas 5 MB per permintaan.'],
                 419 => ['CSRF_TOKEN_MISMATCH', 'Sesi keamanan berakhir. Muat ulang sesi sebelum mencoba lagi.'],
                 429 => ['TOO_MANY_REQUESTS', 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'],
                 default => ['HTTP_ERROR', 'Permintaan gagal diproses.'],

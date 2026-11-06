@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, ApiError, csrf, currentUser, type User } from '#lib/api.ts';
+	import { api, ApiError, csrf, currentUser, downloadDocument, type User } from '#lib/api.ts';
+	import DocumentPanel from '#lib/DocumentPanel.svelte';
+	import type { DocumentType, DocumentVersion } from '#lib/documents.ts';
 	import { blankDraft, blankProfile, draftForm, profileForm, profileFields, financeFields, integerInput, rupiah, timeWib, statusLabels, type Application, type ApplicationList, type Profile } from '#lib/workspace.ts';
 
 	let user = $state<User | null>(null);
 	let active = $state<Application | null>(null);
 	let history = $state<ApplicationList | null>(null);
+	let documentTypes = $state<DocumentType[]>([]);
+	let documents = $state<DocumentVersion[]>([]);
 	let profile = $state(blankProfile());
 	let savedProfile = $state(blankProfile());
 	let draft = $state(blankDraft());
@@ -48,7 +52,7 @@
 			const changedAccount = user !== null && user.id !== identity.id;
 			if (changedAccount) {
 				profile = blankProfile(); savedProfile = blankProfile(); draft = blankDraft(); savedDraft = blankDraft();
-				active = null; history = null; ready = false;
+				active = null; history = null; documents = []; documentTypes = []; ready = false;
 			}
 			user = identity;
 			authenticated = true;
@@ -62,6 +66,11 @@
 			if (!ready || !keepEdits || !profileDirty) profile = { ...nextProfile };
 			savedProfile = { ...nextProfile };
 			const next = states.flatMap((state) => state.data)[0] || null;
+			const [types, files] = await Promise.all([
+				api<{ data: DocumentType[] }>('/api/v1/document-types'),
+				next ? api<{ data: DocumentVersion[] }>(`/api/v1/applications/${next.id}/documents`) : Promise.resolve({ data: [] })
+			]);
+			documentTypes = types.data; documents = files.data;
 			const nextDraft = next ? draftForm(next) : blankDraft();
 			if (!ready || !keepEdits || !draftDirty || active?.id !== next?.id) draft = { ...nextDraft };
 			savedDraft = { ...nextDraft };
@@ -140,6 +149,34 @@
 		catch (error) { showError(error); }
 		finally { busy = false; }
 	}
+
+	async function uploadDocument(type: number, file: File): Promise<boolean> {
+		if (blocked || !active || !editable) return false;
+		busy = true; errors = {};
+		try {
+			if (!await sameAccount()) return false;
+			const form = new FormData(); form.append('document_type_id', String(type)); form.append('file', file);
+			await api(`/api/v1/applications/${active.id}/documents`, form);
+			documents = (await api<{ data: DocumentVersion[] }>(`/api/v1/applications/${active.id}/documents`)).data;
+			failed = false; message = 'Versi dokumen baru tersimpan. Pengajuan belum dikirim untuk ditinjau.';
+			return true;
+		} catch (error) { showError(error, 'documents'); return false; }
+		finally { busy = false; }
+	}
+
+	async function saveDownload(document: DocumentVersion) {
+		if (blocked) return;
+		busy = true;
+		try {
+			if (!await sameAccount()) return;
+			const blob = await downloadDocument(document.id);
+			const url = URL.createObjectURL(blob);
+			const link = window.document.createElement('a'); link.href = url; link.download = document.original_filename;
+			link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+			failed = false; message = 'Unduhan dokumen siap.';
+		} catch (error) { showError(error, 'documents'); }
+		finally { busy = false; }
+	}
 </script>
 
 <svelte:head><title>Ruang Nasabah | Lendara</title></svelte:head>
@@ -193,9 +230,12 @@
 						{#if active.status === 'draft' && active.current_submission_id === null}<button class="danger" onclick={() => dialog.showModal()} disabled={blocked}>Hapus draf</button>{/if}
 					{:else if active}<p class="muted">Pengajuan sedang ditinjau. Data keuangan hanya dapat diubah saat draf atau diminta revisi.</p>
 					{:else}<p class="muted">Buat draf terlebih dahulu untuk mulai mengisi pinjaman dan keuangan.</p>{/if}
-					<div class="next-steps"><span>03 · Dokumen</span><span>04 · Tinjau &amp; kirim</span><p>Unggah dokumen dan pengiriman untuk peninjauan tersedia pada tahap pengembangan berikutnya.</p></div>
+					<div class="next-steps"><span>04 · Tinjau &amp; kirim</span><p>Pengiriman untuk peninjauan tersedia pada tahap pengembangan berikutnya.</p></div>
 				</section>
 			</div>
+			{#if active}{#key `${user?.id}-${active.id}`}
+				<DocumentPanel types={documentTypes} {documents} editable={!!editable} {blocked} errors={errorArea === 'documents' ? errors : {}} onupload={uploadDocument} ondownload={saveDownload} />
+			{/key}{/if}
 			<section class="panel history" aria-labelledby="history-title">
 				<div class="history-heading"><div><p class="eyebrow">PENGAJUAN ANDA</p><h2 id="history-title">Daftar pengajuan</h2></div><div><label for="status-filter">Filter status</label><select id="status-filter" bind:value={filter} onchange={() => loadHistory()} disabled={busy}><option value="">Semua status</option>{#each Object.entries(statusLabels) as [status, label]}<option value={status}>{label}</option>{/each}</select></div></div>
 				{#if history?.data.length}<div class="table-scroll"><table><thead><tr><th>Nomor</th><th>Status</th><th>Jumlah pinjaman</th><th>Disimpan (WIB)</th></tr></thead><tbody>{#each history.data as row}<tr><td class="reference">{row.application_number}</td><td><span class="status-badge">{statusLabels[row.status]}</span></td><td>{rupiah(row.loan_amount)}</td><td>{timeWib(row.updated_at)}</td></tr>{/each}</tbody></table></div>{:else}<p class="muted">Belum ada pengajuan pada status ini.</p>{/if}

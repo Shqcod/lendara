@@ -24,6 +24,10 @@ Pada irisan schema/profil/draf, `DomainConcurrencyTest` membuktikan dua proses/t
 
 ## Nasabah/dokumen
 
+CustomerDocumentsTest membuktikan versi/list/resource aman, kepemilikan dan seluruh peran internal ditolak, akun nonaktif, status upload, batas tepat 5 MB dan lebih satu byte, PDF/PNG/JPG/JPEG, ketidakcocokan MIME/ekstensi, tipe nonaktif, field server terlarang, attachment/no-store/nosniff, file hilang, immutability instance, serta rollback metadata/audit dengan cleanup kompensasi. DomainConcurrencyTest menambah dua upload bersamaan ke pengajuan/jenis sama. Semua memakai guard MySQL test; filesystem feature test menggunakan disk fake.
+
+Playwright documents.spec.ts menguji multipart cookie SPA, 422 isi palsu, batas 5 MB, dua versi, download byte identik, versi lama, 413 server nyata, respons 201 yang diputus tanpa replay, reload, desktop dan 320px. Jalankan suite backend dan browser secara berurutan pada DB test yang sama untuk menghindari benturan transaksi fixture. Crash orphan, grant SQL runtime, akses internal dokumen sesuai tahap, dan submit/resend tetap belum dibuktikan.
+
 - Cross-user ID guessing: 404, termasuk download/snapshot/list documents.
 - Create draft kedua 409; edit/upload di status terlarang 409; delete setelah pernah kirim 409.
 - Draf boleh incomplete, submit incomplete 422 dengan field/document errors; income0 ditolak sebelum Python.

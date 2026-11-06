@@ -1,5 +1,21 @@
 # Progres implementasi
 
+## Sesi 6 November 2026 — dokumen privat nasabah
+
+- Menambahkan GET `/api/v1/document-types`, GET/POST `/api/v1/applications/{id}/documents`, dan GET `/api/v1/document-versions/{id}/download`. Hanya nasabah aktif dan milik sendiri; ID lintas nasabah 404, peran internal termasuk admin masih 403 sampai scope tahap peninjauan tersedia. Tidak mengubah peran/kontrak/status bisnis atau schema.
+- Upload multipart hanya draft/revision_required, PDF/JPG/JPEG/PNG maksimal 5.242.880 byte, kecocokan ekstensi/MIME isi fileinfo, header PDF/metadata gambar. Path UUID dibuat server pada disk local privat; SHA256/ukuran/nama asli dicatat. Ini belum antivirus atau parser penuh PDF. Tidak ada storage link publik atau path/hash/aktor/internal notes di resource nasabah.
+- `CustomerDocuments` mengunci user → aplikasi → jenis → versi terkini; unique index tetap aktif. Metadata/audit atomik, file lama dan tautan snapshot tetap. Kegagalan transaksi setelah write menjadwalkan cleanup kompensasi hanya untuk path baru yang tidak direferensikan. Crash proses/koneksi DB tidak pasti masih dapat menyisakan orphan; rekonsiliasi aman belum diimplementasikan/dibuktikan, tanpa pembersihan massal otomatis.
+- UI `/customer` menambah kartu dokumen, wajib/opsional, versi terkini, ukuran/waktu WIB, unggah dan unduh attachment via cookie SPA. Field error 422, 413 server, pending, 401/403/419, serta hasil upload jaringan tidak pasti ditangani. Mutasi tidak diulang otomatis; baca ulang memperlihatkan versi yang sudah commit. Dokumen lama dapat diunduh pemilik, tetapi pemilih arsip/snapshot UI menunggu tahap pengiriman.
+- php.ini lokal terbaca upload/post **2G/2G**. Helper baru `scripts/start-backend.ps1` membatasi proses server menjadi 5M/8M dan display_errors=0, tanpa mengubah php.ini/.env. Log error PHP tetap aktif. Runner browser memakai helper yang sama dengan guard MySQL test; konfigurasi proxy/deployment belum diuji.
+- Sebelum uji, `system:assert-test-database --env=testing` lulus; `DatabaseIsolationTest` di PHPUnit membuktikan **mysql / kkp_pinjaman_test / 8.0.30** dari koneksi efektif sebelum transaksi. Tidak menjalankan migration/seeder baru, reset DB, atau koneksi mutasi ke database pengembangan. Semua fixture/file pengujian berada pada lingkungan test; data pengembangan dipertahankan.
+- `php artisan test --no-ansi`: **65 lulus, 568 assertions**, exit 0. Bukti `docs/validation/documents-php-tests-2026-11-06.txt`. Tambahan mencakup kepemilikan/peran/nonaktif, status upload, resource allowlist, versi lama/snapshot fixture, batas 5 MB dan lebih satu byte, isi/ekstensi, PDF/PNG/JPG/JPEG, tipe nonaktif, field server, file hilang, attachment/no-store/nosniff, immutability instance dan cleanup rollback.
+- Konkurensi dokumen memakai dua proses/transaksi MySQL dengan barrier dan CONNECTION_ID berbeda; keduanya commit sebagai versi **1/2**, path berbeda, hash cocok, dua audit. Ini pembuktian service upload, bukan endpoint submit/resend atau scope internal. Rincian ID koneksi run akhir ada pada bukti suite.
+- Kegagalan awal: 2/12 test dokumen gagal karena fixture MIME menggunakan tebakan ekstensi serta helper JSON menimpa Content-Length; pembacaan fileinfo nyata dan request test diperbaiki. Percobaan 413 berikutnya belum melewati batas php.ini 2G; diperbaiki menjadi Content-Length sintetis 4G tanpa alokasi body. Seluruh 12 test dokumen kemudian lulus, termasuk fixture JPEG nyata 1px fiktif.
+- Run Chrome awal **3 lulus/1 gagal**: upload kedua terkena deadlock karena saya menjalankan suite PHPUnit bersamaan pada DB test yang sama. Run dokumen terpisah setelah backend selesai **1 lulus (32.9s)**, membuktikan 5 MB, 422, dua versi/byte unduhan/versi lama, 413 server nyata dari POST 9 MB, respons 201 yang diputus tanpa replay, reload, desktop/320px. Suite backend dan browser berikutnya wajib berurutan. Percobaan argumen runner langsung `-- documents.spec.ts` ditolak binding PowerShell; gunakan array -NpmArgs pada SETUP.
+- Verifikasi akhir Chrome setelah PHPUnit selesai: `scripts/frontend.ps1 run test:e2e` **4 lulus (1.1m)**, exit 0; auth, profil/draf, dan dokumen lulus dalam satu run tanpa interferensi suite DB lain. `php vendor/bin/pint --test`: **lulus**. `scripts/frontend.ps1 run check`: **0 error/0 warning**; `run build`: **lulus**. Pemberitahuan adapter-auto belum memilih target deployment dan NO_COLOR/FORCE_COLOR tetap terlihat. Parser seluruh skrip PowerShell **lulus**. Rincian pada `docs/validation/documents-2026-11-06.md`.
+- Screenshot panel dokumen desktop/320px dan ruang nasabah yang diperbarui hanya berisi data/nama berkas fiktif, tanpa kredensial, token, atau path privat; diperiksa visual. Jenis fixture tambahan dapat terlihat pada DB test yang dipertahankan; konfigurasi dev tidak diubah. Trace/video/screenshot otomatis tetap off.
+- API_CONTRACT/DATABASE/UI_SPEC/TEST_PLAN/SETUP/README/AGENTS diperbarui; keputusan D25–D26 mencatat detail implementasi dan batas. ML/dependensi tidak berubah; tidak menjalankan ulang smoke ML, pelatihan, atau audit dependensi. Kendala audit/PCNTL sebelumnya tetap terbuka. Berikutnya pengiriman snapshot atomik dan UI tinjau/kirim; persetujuan/ML asli tetap belum selesai.
+
 ## Sesi 6 November 2026 — commit awal berkas proyek
 
 - Melanjutkan pencatatan Git setelah commit aturan `0adf2b8`: memasukkan berkas proyek yang sebelumnya untracked, termasuk backend, frontend, stub ML, lockfile, konfigurasi contoh, skrip, kontrak/dokumentasi, fixture fiktif, dan bukti validasi yang sudah disimpan.
@@ -26,6 +42,7 @@
 - [x] Queue worker dan callback scheduler terbukti melalui probe; job/deadline prediksi belum diimplementasikan.
 - [x] Migration 14 tabel dan constraint MySQL dasar selesai; konkurensi draf/assignment terbukti. Claim API/riwayat internal tetap tahap berikutnya.
 - [x] Irisan profil dan draf nasabah beserta UI/pengujian selesai.
+- [x] Irisan dokumen privat nasabah: unggah versi, daftar terkini, unduh berizin, UI dan pengujian; akses internal menunggu scope peninjauan.
 - [ ] Fitur nasabah/internal/admin selesai.
 - [ ] Generator data, model asli, dan evaluasi selesai.
 
@@ -33,11 +50,12 @@ Lihat `docs/STARTER_VALIDATION.md` untuk hasil uji paket awal di lingkungan pemb
 
 ## Pekerjaan berikutnya
 
-1. Kerjakan irisan dokumen privat: unggah versi, daftar dokumen, dan unduh dengan policy nasabah/internal sesuai tahap. Selaraskan MIME/ekstensi/5 MB serta konfigurasi server; gunakan prefix storage server loan-documents/ dan queue cleanup yang sudah tersedia.
-2. Lanjutkan pengiriman/kirim ulang: validasi lengkap, snapshot + dokumen immutable + anomaly_check processing atomik, expected_current_submission_id, dispatch afterCommit, UI tinjau/kirim, dan pengujian dua submit bersamaan.
-3. Implementasikan job prediksi, conditional write/deadline, dan scheduler pemulihan; baru lanjutkan claim/verifikasi/persetujuan bersama otorisasi serta bukti konkurensi endpoint dan riwayatnya. Probe setup bukan implementasi domain tersebut.
+1. Lanjutkan pengiriman/kirim ulang: validasi lengkap, snapshot + dokumen immutable + anomaly_check processing atomik, expected_current_submission_id, dispatch afterCommit, UI tinjau/kirim/arsip dokumen, dan pengujian dua submit bersamaan. Tetapkan model aktif secara eksplisit; jangan menyamakan model stub dengan demo akhir.
+2. Implementasikan job prediksi, conditional write/deadline, dan scheduler pemulihan. Probe setup bukan implementasi domain tersebut.
+3. Lanjutkan claim/verifikasi/persetujuan bersama otorisasi, akses dokumen internal sesuai scope tahap (termasuk versi lama), serta bukti konkurensi endpoint dan riwayatnya. Admin tidak mendapat hak unduh otomatis.
 4. Tinjau/finalkan schema serta rancangan generator deterministik, kunci generator, lalu mulai eksperimen model asli sebagai jalur tersendiri; tidak perlu menunggu seluruh UI internal selesai. Jangan melatih model sebelum generator/split/evaluasi disepakati dan dikunci.
 5. Siapkan pemisahan grant user migration/runtime dan pengamanan append-only sesuai DATABASE. Tinjau patch advisory internal Composer/rantai npm deepmerge tanpa mematikan audit/TLS; uji worker POSIX di Linux/WSL pada tahap yang membutuhkan PCNTL.
+6. Rancang rekonsiliasi orphan upload dengan masa tenggang/cek referensi dan prosedur aman, lalu buktikan kegagalan proses/DB pada celah write/commit/cleanup. Jangan menghapus berkas/data pengguna otomatis berdasarkan dugaan rollback.
 
 ## Kendala terbuka
 

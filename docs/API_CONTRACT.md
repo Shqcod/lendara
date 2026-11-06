@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint FastAPI stub, auth/register/login/logout/me, profil nasabah, dan CRUD draf Laravel tersedia; pembuktian integrasinya mengikuti PROGRESS.md. Endpoint dokumen, pengiriman snapshot, peninjauan internal, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint FastAPI stub, auth/register/login/logout/me, profil nasabah, CRUD draf, serta jenis/unggah/daftar/unduh dokumen nasabah Laravel tersedia; pembuktian integrasinya mengikuti PROGRESS.md. Pengiriman snapshot, akses dokumen internal sesuai scope tahap, peninjauan internal, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -54,7 +54,16 @@ Body pengajuan: loan_amount,tenor_months,purpose,monthly_income,monthly_expenses
 - Semua route profil/pengajuan hanya untuk nasabah aktif. ID pengajuan milik orang lain menghasilkan 404, termasuk PATCH dengan body tidak valid. List selalu scoped ke pemilik; filter status tidak memperluas scope. CORS mengizinkan PATCH/DELETE untuk origin frontend yang tepat.
 - Mutasi mengunci user dan memeriksa ulang is_active/role, lalu mengunci pengajuan bila ada. Create memakai lock user + unique active_customer_id. Delete memeriksa status draft, pointer, serta ketiadaan seluruh submission; cleanup dokumen masuk queue database pada koneksi transaksi yang sama sebelum commit. Detail pada DATABASE.md.
 
-Bagian endpoint dokumen/pengiriman/internal berikut tetap merupakan kontrak tahap berikutnya. Keberadaan tabelnya tidak berarti endpoint atau alur tersebut sudah selesai.
+### Irisan dokumen nasabah yang sudah tersedia
+
+- Empat route dokumen pada tabel di atas hanya untuk nasabah aktif. Jenis dokumen mengembalikan id,code,name,is_required,is_active (boolean); tidak ada endpoint pengubahan konfigurasi jenis. GET dokumen mengembalikan array versi terkini per jenis. Jenis nonaktif tetap dapat dibaca, tetapi tidak menerima unggahan baru.
+- Resource versi berupa id,document_type_id,version_number,original_filename,mime_type,file_size_bytes,uploaded_at (UTC); tidak mengirim storage_path,file_hash,uploaded_by atau hasil/catatan internal. Tidak ada URL berkas publik. ID versi lama tetap dapat diunduh pemilik, termasuk saat pengajuan tidak dapat diedit.
+- POST multipart memvalidasi kepemilikan/status sebelum field; milik nasabah lain 404, status terlarang 409 APPLICATION_NOT_EDITABLE. File maksimal 5.242.880 byte; PDF/JPG/JPEG/PNG harus cocok ekstensi dan MIME isi dari fileinfo; PDF diperiksa header, gambar diperiksa metadata gambar. Ini bukan pemeriksaan antivirus atau parsing seluruh isi PDF. Nama asli maksimal 255 karakter tanpa karakter kontrol; path penyimpanan dibuat server.
+- Mutasi mengunci user → aplikasi → jenis → versi terbaru. Nomor versi dialokasikan dalam transaksi dengan unique index tetap aktif; audit dibuat atomik. File lama tidak diubah. Kegagalan transaksi setelah file ditulis menjadwalkan cleanup file baru hanya setelah memastikan tidak ada referensi metadata yang commit. Detail batas rekonsiliasi pada DATABASE.
+- Unduhan melalui policy kepemilikan, attachment, MIME yang dideteksi server, Cache-Control no-store/private, dan X-Content-Type-Options nosniff. File hilang 404. Peran internal termasuk admin masih 403 pada irisan ini; izin internal sesuai tahap akan diimplementasikan bersama peninjauan, bukan diberikan otomatis.
+- PHP bawaan Laragon teramati mengizinkan 2G; helper start-backend membatasi proses lokal menjadi upload_max_filesize=5M dan post_max_size=8M. Post melewati batas server menghasilkan 413 PAYLOAD_TOO_LARGE; file melewati batas upload PHP/validasi menghasilkan 422 pada field file. UI menangani keduanya tanpa mengulang unggahan otomatis.
+
+Bagian pengiriman/internal berikut tetap merupakan kontrak tahap berikutnya. Keberadaan tabelnya tidak berarti endpoint atau alur tersebut sudah selesai.
 
 Upload satu file/request; PDF/JPG/JPEG/PNG max 5 MB, validasi MIME/isi + ekstensi. Nama storage dibuat server. Config PHP/webserver diselaraskan, 413 dinormalisasi jika memungkinkan. File versi lama dipertahankan. Download nasabah hanya miliknya; internal hanya verifikator/penyetuju pada tahap yang diizinkan. Admin tidak otomatis mendapat akses. Proteksi berlaku juga untuk dokumen lama yang terkait versi pengajuan tersebut.
 

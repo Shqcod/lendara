@@ -1,0 +1,97 @@
+import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile } from 'node:fs/promises';
+
+test('dokumen privat: batas ukuran, versi, unduh, 413 server, dan pemulihan unggahan tanpa replay', async ({ page }) => {
+	test.setTimeout(120000);
+	const password = randomUUID();
+	await page.goto('/');
+	await expect(page.getByText('Belum masuk. Silakan gunakan akun Anda.')).toBeVisible();
+	await page.getByRole('button', { name: 'Buat akun', exact: true }).click();
+	await page.getByLabel('Nama lengkap').fill('Nasabah Dokumen Fiktif');
+	await page.getByLabel('Email', { exact: true }).fill(`document-${randomUUID()}@example.test`);
+	await page.getByLabel('Kata sandi', { exact: true }).fill(password);
+	await page.getByLabel('Konfirmasi kata sandi').fill(password);
+	await page.getByRole('button', { name: 'Daftar akun', exact: true }).click();
+	await expect(page.getByText('Pendaftaran berhasil. Silakan masuk.')).toBeVisible();
+	await page.getByLabel('Kata sandi', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+	await page.getByRole('link', { name: 'Buka ruang nasabah' }).click();
+	const created = page.waitForResponse((r) => r.url().endsWith('/applications') && r.request().method() === 'POST');
+	await page.getByRole('button', { name: 'Buat draf pengajuan' }).click();
+	const application = (await (await created).json()).data;
+	const endpoint = `**/api/v1/applications/${application.id}/documents`;
+	const panel = page.getByRole('region', { name: 'Dokumen pengajuan', exact: true });
+	await expect(panel.getByRole('button', { name: 'Unggah versi baru' })).toBeEnabled();
+	await panel.getByLabel('Jenis dokumen', { exact: true }).selectOption({ label: 'D01 · Identitas' });
+	const content = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n');
+	const input = panel.getByLabel('Berkas fiktif (PDF, JPG, JPEG, PNG)', { exact: true });
+	await input.setInputFiles({ name: 'terlalu-besar.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 32) });
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	await expect(panel.getByText('Ukuran berkas maksimal 5 MB.')).toBeVisible();
+	await input.setInputFiles({ name: 'palsu.pdf', mimeType: 'application/pdf', buffer: Buffer.from('Ini bukan PDF.') });
+	const invalid = page.waitForResponse((r) => r.url().endsWith('/documents') && r.request().method() === 'POST');
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	expect((await invalid).status()).toBe(422);
+	await expect(input).toHaveAttribute('aria-invalid', 'true');
+
+	const maximum = Buffer.alloc(5 * 1024 * 1024, 32); content.copy(maximum);
+	await input.setInputFiles({ name: 'identitas-fiktif.pdf', mimeType: 'application/pdf', buffer: maximum });
+	const first = page.waitForResponse((r) => r.url().endsWith('/documents') && r.request().method() === 'POST');
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	const firstResponse = await first;
+	expect(firstResponse.status()).toBe(201);
+	const firstDocument = (await firstResponse.json()).data;
+	expect(firstDocument.file_size_bytes).toBe(5 * 1024 * 1024);
+	expect(firstDocument.storage_path).toBeUndefined();
+	expect(firstResponse.headers()['access-control-allow-credentials']).toBe('true');
+	await expect(panel.getByText('Versi 1 · 5120 KB')).toBeVisible();
+	await input.setInputFiles({ name: 'identitas-pengganti.pdf', mimeType: 'application/pdf', buffer: content });
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	await expect(panel.getByText(/Versi 2 ·/)).toBeVisible();
+	const downloadEvent = page.waitForEvent('download');
+	await panel.getByRole('button', { name: 'Unduh D01', exact: true }).click();
+	const download = await downloadEvent;
+	expect(download.suggestedFilename()).toBe('identitas-pengganti.pdf');
+	expect(await readFile((await download.path())!)).toEqual(content);
+	const old = await page.evaluate(async (id) => {
+		const response = await fetch(`http://localhost:8000/api/v1/document-versions/${id}/download`, { credentials: 'include', headers: { Accept: 'application/json' } });
+		return { status: response.status, size: (await response.blob()).size, cache: response.headers.get('cache-control') };
+	}, firstDocument.id);
+	expect(old).toEqual({ status: 200, size: 5 * 1024 * 1024, cache: 'no-store, private' });
+
+	await input.setInputFiles({ name: 'server-limit.pdf', mimeType: 'application/pdf', buffer: content });
+	await page.route(endpoint, async (route) => {
+		await route.continue({ postData: Buffer.alloc(9 * 1024 * 1024, 32) });
+	}, { times: 1 });
+	const oversized = page.waitForResponse((r) => r.url().endsWith('/documents') && r.request().method() === 'POST');
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	const oversizedResponse = await oversized;
+	expect(oversizedResponse.status()).toBe(413);
+	expect((await oversizedResponse.json()).code).toBe('PAYLOAD_TOO_LARGE');
+	await expect(page.getByRole('alert')).toContainText('Unggahan terlalu besar');
+	await expect(panel.getByRole('button', { name: 'Unggah versi baru' })).toBeEnabled();
+
+	let posts = 0;
+	await input.setInputFiles({ name: 'respons-terputus.pdf', mimeType: 'application/pdf', buffer: content });
+	await page.route(endpoint, async (route) => {
+		posts++;
+		const response = await route.fetch();
+		expect(response.status()).toBe(201);
+		await route.abort();
+	}, { times: 1 });
+	await panel.getByRole('button', { name: 'Unggah versi baru' }).click();
+	await expect(page.getByRole('alert')).toContainText('Periksa sesi sebelum mengirim ulang');
+	await expect(panel.getByRole('button', { name: 'Unggah versi baru' })).toBeDisabled();
+	await page.getByRole('button', { name: 'Periksa sesi dan data terbaru', exact: true }).click();
+	await expect(panel.getByText(/Versi 3 ·/)).toBeVisible();
+	expect(posts).toBe(1);
+	await page.reload();
+	await expect(panel.getByText('respons-terputus.pdf')).toBeVisible();
+	await mkdir('../docs/validation', { recursive: true });
+	await panel.screenshot({ path: '../docs/validation/documents-desktop.png' });
+	await page.setViewportSize({ width: 320, height: 780 });
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	await expect(panel.getByRole('button', { name: 'Unduh D01', exact: true })).toBeVisible();
+	await panel.screenshot({ path: '../docs/validation/documents-mobile-320.png' });
+});
