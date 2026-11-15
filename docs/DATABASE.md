@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; retry manual dan persetujuan tingkat 1/2 tersedia; admin masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; retry manual dan persetujuan tingkat 1/2 tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -104,3 +104,7 @@ PredictionRetries mengunci user → aplikasi → assignment aktif → riwayat ch
 ## Transaksi keputusan persetujuan
 
 ApprovalActions mengunci user aktif/role penyetuju → aplikasi scope → assignment aktif → keputusan snapshot → succeeded check. Level dari role, pemilik/stage/versi diperiksa ulang. L2 memerlukan approved L1 pada snapshot sama. Insert keputusan append-only, status history, update status, penutupan tugas completed/ended_by dan audit atomik; rollback audit membatalkan seluruh efek. Unique(submission_id,level) tetap pengaman. Snapshot, dokumen dan hasil model tetap. Status final melepas marker aktif sehingga nasabah boleh membuat draf baru. Tidak ada schema/migration/grant baru. Dua koneksi/kernel/barrier/lock wait nyata pada masing-masing level membuktikan satu keputusan/history/audit dan request kedua keluar scope.
+
+## Akun internal admin (irisan awal)
+
+InternalAccounts.create mengunci user admin, memeriksa ulang is_active/role, insert akun aktif dengan satu role internal dan hash password dari model User, lalu activity_logs internal_user.created atomik. Unique users.email tetap; race duplicate diterjemahkan ke validasi email, rollback audit membatalkan akun. Tidak mengubah schema/grant/sessions/assignments atau hak unduh. DomainConcurrencyTest accounts_http membuktikan dua koneksi/kernel dari admin yang sama dengan validator sebelum lock user, lock wait aktual dan hasil 201/422; satu akun/audit. Percobaan dua admin berbeda tidak berhasil mengamati pasangan wait yang diharapkan di harness ini dan bukan bukti yang diklaim. Nonaktif/role-edit/cabut sessions tetap target berikutnya.

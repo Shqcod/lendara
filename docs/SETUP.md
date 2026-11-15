@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi, retry manual, persetujuan tingkat 1/2 serta browser revisi/kirim ulang tersedia; admin dan model asli masih tahap berikutnya.
+Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi, retry manual, persetujuan tingkat 1/2 serta browser revisi/kirim ulang tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun serta model asli masih berikutnya.
 
 ## Runtime
 
@@ -121,3 +121,7 @@ Scheduler: `php artisan schedule:run --env=testing` menjalankan heartbeat dan an
 Audit aplikasi Laravel bersih pada sesi 6 November 2026, sedangkan `composer diagnose` masih melaporkan advisory internal Composer pada symfony/filesystem (GHSA-6prc-h956-hxjq). Keduanya pemeriksaan berbeda; Composer tidak diperbarui secara global pada sesi ini.
 
 Audit npm versi final melaporkan empat paket terdampak tingkat rendah dari deepmerge 4.3.1, diteruskan melalui plugin Svelte → SvelteKit → adapter. Tidak ada perbaikan kompatibel yang ditawarkan audit saat sesi ini. Vite telah dipatch ke 8.3.6 untuk menutup temuan tingkat tinggi dari versi template. Jangan menggunakan `npm audit fix --force`, mematikan TLS/audit, atau menurunkan framework ke versi kuno yang disarankan resolver audit. Tinjau rilis perbaikan sebelum demo/deployment.
+
+## Admin lokal — akun dan log
+
+Gunakan admin yang sudah ada, atau jalankan eksplisit `php artisan users:create-admin` dari backend pada local/testing untuk bootstrap. Command meminta nama/email/kata sandi tersembunyi/konfirmasi, tanpa kredensial bawaan, tidak menimpa akun lama dan tidak berlaku pada demo/production. Command pada sesi ini hanya diuji di DB test, tidak membuat akun dev otomatis. Jangan menaruh kata sandi di argumen/chat/Git/log. Setelah login pilih Buka pengelolaan admin → /admin. Admin dapat membuat empat peran internal, melihat daftar internal dan log ringkas; tidak mendapat akses dokumen nasabah. Pengubahan peran, penonaktifan/aktivasi dan pencabutan sesi belum tersedia pada irisan ini.

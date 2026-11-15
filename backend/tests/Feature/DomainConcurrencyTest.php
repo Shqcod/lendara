@@ -55,7 +55,7 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
-            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http', 'approval_http'], true)) {
+            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http', 'approval_http', 'accounts_http'], true)) {
                 $a = (int) file_get_contents($directory.'/a.ready');
                 $b = (int) file_get_contents($directory.'/b.ready');
                 $until = microtime(true) + 8;
@@ -66,6 +66,9 @@ class DomainConcurrencyTest extends TestCase
                         WHERE r.PROCESSLIST_ID = ? AND b.PROCESSLIST_ID = ?', [$b, $a])->n;
                     if ($waiting) {
                         break;
+                    }
+                    if ($mode === 'accounts_http' && ! $processes['b']->isRunning()) {
+                        $this->fail('Account worker B ended before lock observation: '.$processes['b']->getOutput().' '.$processes['b']->getErrorOutput());
                     }
                     usleep(20000);
                 } while (microtime(true) < $until);
@@ -90,6 +93,16 @@ class DomainConcurrencyTest extends TestCase
                 }
             }
         }
+    }
+
+    public function test_concurrent_admin_creations_with_same_email_create_one_user_and_audit(): void
+    {
+        $a = User::factory()->create(['role' => 'admin']);
+        $results = $this->race('accounts_http', $a->id);
+        $this->assertSame(['created', 'email_conflict'], array_column($results, 'result'));
+        $logs = DB::table('activity_logs')->where('actor_id', $a->id)->where('action', 'internal_user.created')->get();
+        $this->assertCount(1, $logs);
+        $this->assertDatabaseHas('users', ['id' => $logs[0]->target_id, 'role' => 'verifikator']);
     }
 
     public function test_concurrent_approval_at_each_level_commits_only_one_decision(): void

@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia; admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia; irisan admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -163,3 +163,15 @@ POST /internal/submissions/{id}/approval-decisions menerima decision approved/re
 Hanya penyetuju aktif pemilik tugas aktif sesuai tahap/versi terkini. Peran lain/tanpa tugas/bukan pemilik 403; luar scope tahap 404; arsip 409 SUBMISSION_VERSION_CONFLICT. Tingkat 2 (setuju maupun tolak) wajib mempunyai approved tingkat 1 pada snapshot sama, selain itu 409 INVALID_STATUS_TRANSITION. Tanpa succeeded 409 ANOMALY_CHECK_NOT_READY. Penyetuju tidak meminta revisi. Duplikat yang sudah berpindah tahap 404, keputusan level yang telah ada pada tahap sama 409; unique per snapshot/level tetap aktif.
 
 201 data: id,submission_id,level,decision,application_status. Setuju L1 → pending_approval_2; setuju L2 → approved; tolak L1/L2 → rejected final. Keputusan, status history, update status, completed tugas dan activity log commit atomik. Tidak ada snapshot baru atau perubahan dokumen/check. Scope peninjau tahap lama berhenti setelah transisi. Snapshot internal menambah approval_decisions terurut level (maksimal dua karena unique), berisi id,level,decision,notes,anomaly_check_id,decided_at UTC. Nasabah hanya melihat status/waktu; notes penolakan/keputusan tetap internal dan bukan revision_reason.
+
+## Admin — irisan akun internal dan log
+
+GET /admin/users dan POST /admin/users serta GET /admin/activity-logs tersedia hanya untuk admin aktif (cookie SPA, no-store/private). Peran lain 403, anonim 401. Tidak menambah akses pengajuan/dokumen nasabah. Edit role, nonaktif/aktif akun dan pencabutan sesi masih irisan berikutnya, belum ada endpoint mutasinya.
+
+GET users hanya empat peran internal (verifikator,penyetuju_1,penyetuju_2,admin), bukan daftar nasabah. Filter opsional role dari empat peran, email lengkap exact match, is_active=0/1, page/per_page default20 maksimal100. Respons paginated berisi id,name,email,role,is_active; tanpa hash/password/remember_token/sesi. Filter tidak memperluas scope.
+
+POST users: name teks wajib maksimal150, email valid unik maksimal255, role salah satu empat peran internal, password 8–128 karakter dan password_confirmation cocok. is_active/id/actor_id dari klien dilarang; server menetapkan aktif. 201 data user aman dan message. Akun/audit internal_user.created atomik dengan lock ulang admin aktif/peran. Unique email tetap pengaman; konflik termasuk saat race menjadi 422 errors.email. Audit hanya role/ID, tidak menyimpan password/email pada metadata. Aktor tetap login sebagai dirinya, bukan otomatis login sebagai akun baru.
+
+GET activity-logs: filter exact action maksimal100 dan actor_id positif, page/per_page maksimal100. Data allowlist id,actor_id,action,target_type,target_id,created_at ISO UTC, terbaru dahulu. Description/metadata mentah tidak dikirim untuk menghindari bocornya isi internal/sensitif yang mungkin tercatat pada event lama. Ini ringkasan aktivitas, bukan hak baru membaca snapshot/berkas. Tidak ada endpoint hapus akun/log.
+
+Bootstrap opsional php artisan users:create-admin hanya local/testing, nama/email dan secret prompt kata sandi/konfirmasi; tanpa password bawaan/argumen rahasia. Tidak dijalankan otomatis dan menolak demo/production. Bootstrap pertama di deployment belum diimplementasikan.

@@ -44,7 +44,22 @@ try {
         $wait($directory.'/a.inserted');
         file_put_contents($directory.'/b.attempting', 'transaction-active');
     }
-    if ($mode === 'draft') {
+    if ($mode === 'accounts_http') {
+        Auth::guard('web')->setUser(User::findOrFail($actor));
+        $password = bin2hex(random_bytes(16));
+        $request = Request::create('/api/v1/admin/users', 'POST', [], [], [],
+            ['HTTP_ORIGIN' => 'http://localhost:5173', 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
+            json_encode(['name' => 'Akun Race Fiktif', 'email' => 'race-'.basename($directory).'@example.test', 'password' => $password, 'password_confirmation' => $password, 'role' => 'verifikator']));
+        $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
+        $httpStatus = $response->getStatusCode();
+        if (! in_array($httpStatus, [201, 422], true)) {
+            throw new RuntimeException('Unexpected account create status '.$httpStatus);
+        }
+        if ($worker === 'a' && $httpStatus !== 201) {
+            throw new RuntimeException('Initial account HTTP '.$httpStatus.' fields '.implode(',', array_keys(json_decode($response->getContent(), true)['errors'] ?? [])));
+        }
+        $claimResult = $httpStatus === 201 ? 'created' : 'email_conflict';
+    } elseif ($mode === 'draft') {
         app(CustomerWorkspace::class)->createDraft((int) $actor, []);
     } elseif ($mode === 'claim_http') {
         Auth::guard('web')->setUser(User::findOrFail($actor));

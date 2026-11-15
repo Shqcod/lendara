@@ -1,0 +1,12 @@
+# Validasi admin akun internal — 15 November 2026
+
+Lingkungan Windows, guard PASS MySQL 8.0.30 / kkp_pinjaman_test efektif. Tidak ada reset/migration/mutasi DB dev atau perubahan .env/dependency. Semua akun/file fiktif. Scope sesi daftar/buat empat role internal dan log ringkas, bukan edit role/nonaktif/cabut sesi.
+
+- Target awal 5 pass/1 fail (ID dokumen tidak ada 404; diganti fixture nyata untuk membuktikan admin 403). Target setelah bootstrap 7 pass/96 assertions (3.34s).
+- Konkurensi dua admin berbeda gagal mengamati pasangan wait yang diharapkan di harness; tidak diklaim terbukti. Final dua proses/koneksi admin sama dengan barrier/lock wait actual, unique email tetap aktif: target1 pass/8 assertions, final connection3664/3665, 201/422 satu user/audit. Validator berjalan sebelum lock user.
+- Regresi awal 122 pass/1 fail pada observasi; sesudah perbaikan harness123 pass/1330 assertions (43.15s). Satu regresi berikut123 pass/1 fail karena email Faker berbenturan dengan fixture test lama; factory email diubah menjadi ULID@example.test tanpa reset data. Ulang124 pass/1347 assertions (43.85s) sempat overlap browser dan bukan bukti final yang dipakai.
+- Regresi final terisolasi124 pass/1348 assertions (48.80s), exit0. Log admin-accounts-php-tests-2026-11-15.txt, whitespace terminal dirapikan. Hasil termasuk scope/validasi/hash/audit/rollback/fresh actor, bootstrap local/testing secret prompt + production rejected, dan regresi alur sebelumnya. Tidak menjalankan bootstrap pada DB dev.
+- Chrome awal FAIL overflow320 (22.3s); diperbaiki display main/min-width panel/scroll tabel. Ulang PASS39.4s. Screenshot kemudian menunggu tombol filter kembali enabled; run overlap41.5s tidak dipakai sebagai bukti final. Chrome final sesudah backend berhenti PASS1 skenario (40.0s, skenario33.6s), exit0: login cookie admin, create respons201 abort tanpa replay, password form kosong, read ulang/filter satu akun/log, akun baru dapat login, reviewer tidak melihat admin. Tidak menjalankan ulang seluruh suite browser.
+- Check0 error/0 warning, build PASS, Pint --test PASS. Warning warna/adapter-auto deployment tetap. Screenshot desktop/320px diperiksa visual setelah selesai memuat, identitas/email fiktif, password kosong, tanpa token/path privat.
+
+Tahap berikutnya admin edit role/nonaktif-aktif/cabut sessions/pelepasan tugas atomik. Grant runtime, deployment, crash orphan/PCNTL dan model asli belum selesai; tidak ada audit dependency/evaluasi ML baru.

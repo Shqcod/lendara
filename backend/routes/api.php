@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\InternalApplicationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Middleware\EnsureActiveUser;
+use App\Http\Middleware\RequireAdmin;
 use App\Http\Middleware\RequireCustomer;
 use App\Http\Middleware\RequireReviewer;
 use App\Http\Middleware\RequireSpaSession;
@@ -22,6 +24,12 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/document-versions/{document}/download', [DocumentController::class, 'download'])->whereNumber('document');
+
+    Route::prefix('admin')->middleware(RequireAdmin::class)->group(function () {
+        Route::get('/users', [AdminController::class, 'users']);
+        Route::post('/users', [AdminController::class, 'store']);
+        Route::get('/activity-logs', [AdminController::class, 'logs']);
+    });
 
     Route::prefix('internal')->middleware(RequireReviewer::class)->group(function () {
         Route::get('/submissions/{submission}/anomaly-checks', [InternalApplicationController::class, 'checks'])->whereNumber('submission');
