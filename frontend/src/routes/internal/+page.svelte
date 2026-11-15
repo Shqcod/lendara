@@ -23,13 +23,14 @@
 	let errors = $state<Record<string, string[]>>({});
 	let reason = $state('');
 	let releaseId = $state<number | null>(null);
+	let retryDialog = $state<HTMLDialogElement>();
 	let releaseDialog = $state<HTMLDialogElement>();
 	const allowed = $derived(user && reviewerRoles.some((role) => role === user?.role));
 	const blocked = $derived(busy || !ready || uncertain || !authenticated || !allowed);
 	const own = $derived(detail?.current_assignment?.assigned_to === user?.id);
 	const currentVersion = $derived(snapshot?.id === detail?.current_submission_id);
 
-	function clearData() { rows = null; summary = null; detail = null; snapshot = null; ready = false; releaseDialog?.close(); reason = ''; }
+	function clearData() { rows = null; summary = null; detail = null; snapshot = null; ready = false; releaseDialog?.close(); retryDialog?.close(); reason = ''; }
 	function showError(error: unknown, mutation = false) {
 		failed = true; message = error instanceof Error ? error.message : 'Permintaan gagal diproses.';
 		errors = error instanceof ApiError ? error.fields : {};
@@ -97,6 +98,18 @@
 		catch (error) { showError(error); }
 		finally { busy = false; }
 	}
+	async function retry(event: SubmitEvent) {
+        event.preventDefault(); retryDialog?.close();
+        if (blocked || !own || !currentVersion || !snapshot || user?.role !== 'verifikator') return;
+        busy = true;
+        try {
+            if (!await sameAccount()) return;
+            await api(`/api/v1/internal/submissions/${snapshot.id}/anomaly-checks`, {});
+            uncertain = true;
+            if (await load()) message = 'Percobaan pemeriksaan baru diterima. Periksa data terbaru untuk hasilnya.';
+        } catch (error) { showError(error, true); }
+        finally { busy = false; }
+    }
 	async function verify(type: string, notes: string, checklist: Record<string, boolean>) {
 		if (blocked || !own || !currentVersion || !snapshot) return;
 		busy = true; errors = {};
@@ -146,14 +159,15 @@
 					<div class="pagination"><button onclick={() => load(detail!.id, `?submission_page=${detail!.submissions.meta.current_page - 1}`)} disabled={busy || detail.submissions.meta.current_page <= 1}>Versi sebelumnya</button><span>Halaman {detail.submissions.meta.current_page}/{detail.submissions.meta.last_page}</span><button onclick={() => load(detail!.id, `?submission_page=${detail!.submissions.meta.current_page + 1}`)} disabled={busy || detail.submissions.meta.current_page >= detail.submissions.meta.last_page}>Versi berikutnya</button></div>
 					<article aria-labelledby="snapshot-title"><h3 id="snapshot-title">Pengiriman versi {snapshot.version_number}{currentVersion ? ' · terkini' : ' · arsip, hanya baca'}</h3><p class="muted">Dikirim {timeWib(snapshot.submitted_at)}. Data di bawah berasal dari versi pengiriman tersimpan.</p><div class="snapshot-grid"><dl>{#each profileFields as field}<dt>{field.label}</dt><dd>{snapshot.customer_snapshot[field.key] ?? 'Belum diisi'}</dd>{/each}<dt>Alamat fiktif</dt><dd>{snapshot.customer_snapshot.address}</dd></dl><dl>{#each financeFields as field}<dt>{field.label}</dt><dd>{rupiah(snapshot[field.key])}</dd>{/each}<dt>Tenor</dt><dd>{snapshot.tenor_months} bulan</dd><dt>Tujuan</dt><dd>{snapshot.purpose}</dd></dl></div>
 						<h3>Dokumen saat dikirim</h3>{#if !snapshot.documents.length}<p class="muted">Tidak ada dokumen pada versi ini.</p>{/if}{#each snapshot.documents as file}<div class="file-row"><span>{file.original_filename} · versi berkas {file.version_number}</span><button onclick={() => download(file)} disabled={blocked}>Unduh {file.original_filename}</button></div>{/each}
-						<h3>Pemeriksaan anomali</h3><p class="muted">Hasil ini menjadi bahan peninjauan manusia. Pengambilan atau pelepasan tugas tidak memutuskan pinjaman.</p>{#if !snapshot.anomaly_checks.length}<p>Belum ada pemeriksaan.</p>{/if}{#each snapshot.anomaly_checks as check}<div class="check"><strong>Percobaan {check.attempt_number} · {check.status === 'succeeded' ? 'Selesai' : check.status === 'failed' ? 'Gagal' : 'Diproses'}</strong><p class="muted">Model: {check.model_version_code} · Mulai {timeWib(check.started_at)}</p>{#if check.status === 'succeeded'}<p>Skor: {check.score?.toLocaleString('id-ID', { maximumFractionDigits: 6 })} · {check.is_anomaly ? 'Perlu peninjauan anomali' : 'Tidak ditandai anomali'}</p>{:else if check.status === 'failed'}<p>Pemeriksaan belum berhasil. Retry manual tersedia pada tahap verifikasi berikutnya.</p>{/if}</div>{/each}
+						<h3>Pemeriksaan anomali</h3><p class="muted">Hasil ini menjadi bahan peninjauan manusia. Pengambilan atau pelepasan tugas tidak memutuskan pinjaman.</p>{#if !snapshot.anomaly_checks.length}<p>Belum ada pemeriksaan.</p>{/if}{#each snapshot.anomaly_checks as check}<div class="check"><strong>Percobaan {check.attempt_number} · {check.status === 'succeeded' ? 'Selesai' : check.status === 'failed' ? 'Gagal' : 'Diproses'}</strong><p class="muted">Model: {check.model_version_code} · Mulai {timeWib(check.started_at)}</p>{#if check.status === 'succeeded'}<p>Skor: {check.score?.toLocaleString('id-ID', { maximumFractionDigits: 6 })} · {check.is_anomaly ? 'Perlu peninjauan anomali' : 'Tidak ditandai anomali'}</p>{:else if check.status === 'failed'}<p>Pemeriksaan belum berhasil. Percobaan ulang membuat riwayat baru pada versi yang sama.</p>{/if}</div>{/each}
+                        {#if user?.role === 'verifikator'}<button onclick={() => retryDialog?.showModal()} disabled={blocked || !own || !currentVersion || snapshot.anomaly_checks[0]?.status !== 'failed' || snapshot.anomaly_checks.some((check) => check.status !== 'failed')}>Ulangi pemeriksaan</button>{/if}
 					</article>
 					<h3>Riwayat penugasan</h3><ol>{#each detail.assignments.data as assignment}<li><strong>{assignment.assignee.name}</strong> · {stageLabels[assignment.stage] || assignment.stage}<br />Diambil {timeWib(assignment.claimed_at)}{#if assignment.ended_at}<br />{assignment.end_type === 'released' ? 'Dilepas' : 'Selesai'} {timeWib(assignment.ended_at)}{#if assignment.end_reason}<p>Alasan: {assignment.end_reason}</p>{/if}{:else}<br />Aktif{/if}</li>{/each}</ol>
 					<div class="pagination"><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page - 1}`)} disabled={busy || detail.assignments.meta.current_page <= 1}>Penugasan sebelumnya</button><span>Halaman {detail.assignments.meta.current_page}/{detail.assignments.meta.last_page}</span><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page + 1}`)} disabled={busy || detail.assignments.meta.current_page >= detail.assignments.meta.last_page}>Penugasan berikutnya</button></div>
 					<h3>Riwayat status</h3><ol>{#each detail.status_histories.data as history}<li>{statusLabels[history.from_status]} → {statusLabels[history.to_status]}<br />{timeWib(history.changed_at)}</li>{/each}</ol><div class="pagination"><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page - 1}`)} disabled={busy || detail.status_histories.meta.current_page <= 1}>Status sebelumnya</button><span>Halaman {detail.status_histories.meta.current_page}/{detail.status_histories.meta.last_page}</span><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page + 1}`)} disabled={busy || detail.status_histories.meta.current_page >= detail.status_histories.meta.last_page}>Status berikutnya</button></div>
 					{#each Object.entries(errors) as [field, messages]}<p class="field-error" role="alert">{field}: {messages[0]}</p>{/each}
 					{#key snapshot.id}<VerificationPanel {snapshot} disabled={blocked} locked={!own || !currentVersion || user?.role !== 'verifikator'} submit={verify} page={(value) => selectSnapshot(snapshot!.id, value)} />{/key}
-					<p class="muted">Retry manual dan keputusan persetujuan tersedia pada irisan berikutnya.</p>
+					<p class="muted">Keputusan persetujuan tersedia pada irisan berikutnya.</p>
 				</section>{/if}
 			{/if}
 		</div>
@@ -161,6 +175,7 @@
 </div>
 <dialog bind:this={releaseDialog} aria-labelledby="release-title" oncancel={(event) => { if (busy) event.preventDefault(); }}><form onsubmit={release}><h2 id="release-title">Lepas tugas ke antrean?</h2><p>Status pengajuan tetap. Peninjau lain pada tahap yang sama dapat mengambil tugas ini.</p><label for="release-reason">Alasan pelepasan</label><textarea id="release-reason" bind:value={reason} required maxlength="16000" disabled={busy} aria-invalid={!!errors.reason}></textarea>{#if errors.reason}<p class="field-error">{errors.reason[0]}</p>{/if}<div class="actions"><button type="button" onclick={() => releaseDialog?.close()} disabled={busy}>Batal</button><button type="submit" class="primary" disabled={blocked}>Ya, lepas tugas</button></div></form></dialog>
 
+<dialog bind:this={retryDialog} aria-labelledby="retry-title"><form onsubmit={retry}><h2 id="retry-title">Ulangi pemeriksaan anomali?</h2><p>Snapshot dan dokumen tetap. Percobaan baru memakai versi model dan fitur yang sama; status pinjaman tidak berubah.</p><div class="actions"><button type="button" onclick={() => retryDialog?.close()}>Batal</button><button type="submit" disabled={blocked}>Ya, ulangi pemeriksaan</button></div></form></dialog>
 <style>
 	.board { display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: start; gap: 24px; padding: 24px 0 40px; } aside { position: sticky; top: 20px; } h1 { font-size: 23px; line-height: 1.5; } h2 { font-size: 22px; margin-top: 5px; overflow-wrap: anywhere; } h3 { font-size: 15px; margin-top: 26px; } .content { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 	.panel { background: white; border: 1px solid #e2e7dc; border-radius: 14px; padding: 24px; min-width: 0; } nav { display: flex; flex-direction: column; gap: 8px; } button { background: white; color: #315841; border: 1px solid #dce2d8; border-radius: 7px; padding: 10px 12px; font-size: 12px; min-height: 44px; } .chosen, .claim { background: #edf4e6; border-color: #6d8b59; } .primary { color: white; background: #214f40; } .refresh { width: auto; }

@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; persetujuan, retry manual, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -118,7 +118,7 @@ Body: result_type note/request_revision/forward, notes nullable maksimal 16000 k
 
 201 data berisi id,submission_id,result_type,application_status. Note menambah konten/audit tanpa menutup tugas atau menambah status history. Revision/forward menutup tugas completed dan mengubah status ke revision_required/pending_approval_1 bersama konten/history/audit dalam satu transaksi. Scope verifikator berhenti setelah transisi; baca ulang antrean menghapus detail lama. Tidak replay mutasi setelah respons tidak pasti.
 
-Snapshot internal menambah verification_results berpaginasi 10 item (verification_page positif) termasuk id,verifier_id,result_type,notes,document_checklist,anomaly_check_id,created_at UTC. Resource nasabah tidak berubah: hanya alasan request_revision publik pada status-histories. Endpoint approval-decisions dan retry/read-attempt terpisah masih target berikutnya.
+Snapshot internal menambah verification_results berpaginasi 10 item (verification_page positif) termasuk id,verifier_id,result_type,notes,document_checklist,anomaly_check_id,created_at UTC. Resource nasabah tidak berubah: hanya alasan request_revision publik pada status-histories. Endpoint approval-decisions masih target berikutnya; retry/read-attempt tersedia.
 
 ## Kode domain
 
@@ -145,3 +145,13 @@ Kontrak lengkap pada ML_SERVICE.md; schema contoh fixtures/prediction-request.js
 
 Administrasi detail disusun tahap 9. Tidak membuat endpoint penghapusan akun. Kebijakan edit role: selesaikan/lepas tugas aktif dahulu; perubahan role jangan mewariskan tugas tahap lama. Nonaktifkan akun, cabut sessions, lepas tugas, dan log dalam transaksi.
 
+
+## Retry manual yang tersedia
+
+GET /internal/submissions/{id}/anomaly-checks mengembalikan data array percobaan terbaru dahulu dengan allowlist yang sama seperti anomaly_checks pada snapshot internal (tanpa fitur mentah/artefak). Tiga reviewer dapat membaca snapshot terkini/arsip selama aplikasi ada pada tahap perannya; nasabah/admin ditolak.
+
+POST path yang sama menerima body kosong. Hanya verifikator aktif pemilik tugas aktif tahap verification, snapshot URL harus pointer terkini. Versi lama 409 SUBMISSION_VERSION_CONFLICT, tanpa tugas/bukan pemilik 403, di luar scope 404. Semua field klien ditolak 422. Hanya riwayat dengan percobaan terakhir failed dan tanpa processing/succeeded dapat diulang; selain itu 409 ANOMALY_RETRY_NOT_ALLOWED. Deadline processing yang lewat tetap menunggu scheduler mengubahnya ke failed.
+
+Retry memin model_version_id dan input_features percobaan sebelumnya, bukan profil kerja/model aktif terbaru. Model harus sesuai mode runtime (termasuk larangan stub demo/production), jika tidak 503 SERVICE_NOT_READY. Tidak memanggil readiness HTTP dalam transaksi. Ketersediaan model layanan diverifikasi saat job berjalan, tanpa fallback.
+
+202 data: id,submission_id,attempt_number,status=processing, berarti percobaan diterima, bukan hasil final. Audit dan percobaan baru/deadline 120 detik commit bersama. Tidak membuat snapshot/history/status bisnis/penutupan tugas baru. Job predictions didispatch setelah commit. Dispatch gagal tetap 202, status aktual failed/dispatch_failed bila dapat disimpan, atau dipulihkan scheduler; baca ulang status. Tidak ada retry POST/HTTP otomatis.

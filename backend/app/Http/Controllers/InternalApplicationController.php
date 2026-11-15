@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Http\Requests\AssignmentClaimRequest;
 use App\Http\Requests\AssignmentReleaseRequest;
 use App\Http\Requests\VerificationRequest;
@@ -9,6 +10,7 @@ use App\Http\Resources\AssignmentResource;
 use App\Models\ApplicationSubmission;
 use App\Models\Assignment;
 use App\Services\InternalReadModel;
+use App\Services\PredictionRetries;
 use App\Services\ReviewAssignments;
 use App\Services\ReviewScope;
 use App\Services\VerificationActions;
@@ -85,6 +87,24 @@ class InternalApplicationController extends Controller
         $scope->applications($request->user())->whereKey($application)->firstOrFail();
 
         return $this->json(['data' => $read->snapshot((int) $application, (int) $submission)]);
+    }
+
+    public function checks(Request $request, string $submission, ReviewScope $scope, InternalReadModel $read)
+    {
+        $snapshot = ApplicationSubmission::findOrFail($submission);
+        $scope->applications($request->user())->whereKey($snapshot->application_id)->firstOrFail();
+
+        return $this->json(['data' => $read->snapshot($snapshot->application_id, (int) $submission)['anomaly_checks']]);
+    }
+
+    public function retry(Request $request, string $submission, ReviewScope $scope, PredictionRetries $retries)
+    {
+        abort_unless($request->user()->role === Role::Verifier, 403);
+        $snapshot = ApplicationSubmission::findOrFail($submission);
+        $scope->applications($request->user())->whereKey($snapshot->application_id)->firstOrFail();
+        abort_if(count($request->all()) !== 0, 422, 'Retry tidak menerima field dari klien.');
+
+        return $this->json(['data' => $retries->retry($request->user()->id, (int) $submission), 'message' => 'Percobaan pemeriksaan baru diterima. Periksa data terbaru untuk hasilnya.'], 202);
     }
 
     public function verify(VerificationRequest $request, string $submission, VerificationActions $actions)

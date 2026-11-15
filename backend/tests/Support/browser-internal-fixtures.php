@@ -47,9 +47,9 @@ foreach (['verification' => 'pending_verification', 'l1' => 'pending_approval_1'
             'original_filename' => $filename, 'storage_path' => $path, 'mime_type' => 'application/pdf', 'file_size_bytes' => strlen($contents),
             'file_hash' => hash('sha256', $contents), 'uploaded_by' => $customer->id, 'uploaded_at' => now()]);
         DB::table('submission_documents')->insert(['submission_id' => $submission, 'document_type_id' => $type, 'document_version_id' => $document, 'created_at' => now()]);
-        DB::table('anomaly_checks')->insert(['submission_id' => $submission, 'model_version_id' => $model, 'attempt_number' => 1, 'status' => 'succeeded',
+        DB::table('anomaly_checks')->insert(['submission_id' => $submission, 'model_version_id' => $model, 'attempt_number' => 1, 'status' => ($input['retry'] ?? false) && $key === 'verification' ? 'failed' : 'succeeded',
             'input_features' => json_encode(['monthly_income' => 8000000, 'monthly_expenses' => 3000000, 'existing_installments' => 0, 'loan_amount' => 20000000.01, 'tenor_months' => 12]),
-            'score' => -0.12, 'is_anomaly' => true, 'started_at' => now(), 'deadline_at' => now()->addSeconds(120), 'finished_at' => now()]);
+            'score' => ($input['retry'] ?? false) && $key === 'verification' ? null : -0.12, 'is_anomaly' => ($input['retry'] ?? false) && $key === 'verification' ? null : true, 'failure_reason' => ($input['retry'] ?? false) && $key === 'verification' ? 'fixture_failure' : null, 'started_at' => now(), 'deadline_at' => now()->addSeconds(120), 'finished_at' => now()]);
         $versions[$version] = ['id' => $submission, 'document' => $document];
     }
     DB::table('loan_applications')->where('id', $id)->update(['current_submission_id' => $versions[2]['id']]);

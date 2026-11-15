@@ -55,7 +55,7 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
-            if (in_array($mode, ['claim_http', 'verification_http'], true)) {
+            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http'], true)) {
                 $a = (int) file_get_contents($directory.'/a.ready');
                 $b = (int) file_get_contents($directory.'/b.ready');
                 $until = microtime(true) + 8;
@@ -90,6 +90,22 @@ class DomainConcurrencyTest extends TestCase
                 }
             }
         }
+    }
+
+    public function test_concurrent_retry_creates_one_attempt_and_audit(): void
+    {
+        $actor = User::factory()->create(['role' => 'verifikator']);
+        $application = $this->loan(overrides: ['status' => 'pending_verification']);
+        $submission = $this->submission($application);
+        DB::table('loan_applications')->where('id', $application)->update(['current_submission_id' => $submission]);
+        $this->assignment($application, $submission, ['assigned_to' => $actor->id]);
+        $this->artisan('ml:register-stub');
+        $model = DB::table('model_versions')->where('version_code', 'stub-v0')->value('id');
+        $this->check($submission, 'failed', overrides: ['model_version_id' => $model]);
+        $results = $this->race('retry_http', $actor->id, $application, $submission);
+        $this->assertSame(['created', 'retry_conflict'], array_column($results, 'result'));
+        $this->assertSame(2, DB::table('anomaly_checks')->where('submission_id', $submission)->count());
+        $this->assertSame(1, DB::table('activity_logs')->where('actor_id', $actor->id)->where('action', 'anomaly.retry_requested')->count());
     }
 
     public function test_concurrent_verification_commits_one_terminal_result_history_and_audit(): void

@@ -5,16 +5,12 @@ namespace App\Services;
 use App\Enums\ApplicationStatus;
 use App\Enums\Role;
 use App\Exceptions\DomainError;
-use App\Jobs\RunPrediction;
 use App\Models\ApplicationSubmission;
 use App\Models\CustomerProfile;
 use App\Models\DocumentVersion;
 use App\Models\LoanApplication;
 use App\Models\User;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class CustomerSubmissions
 {
@@ -70,25 +66,14 @@ class CustomerSubmissions
             DB::table('activity_logs')->insert(['actor_id' => $actor, 'action' => 'application_submission.created', 'target_type' => 'application_submission',
                 'target_id' => $submission->id, 'metadata' => '{}', 'created_at' => now()]);
             // Register the callback explicitly: enqueue errors must not turn an already committed submission into an HTTP failure.
-            DB::afterCommit(function () use ($check) {
-                try {
-                    Bus::dispatch((new RunPrediction($check))->onConnection('database')->onQueue('predictions'));
-                } catch (Throwable) {
-                    Log::error('Job prediksi gagal dijadwalkan setelah pengiriman commit.', ['anomaly_check_id' => $check]);
-                    try {
-                        app(PredictionResults::class)->fail($check, 'dispatch_failed');
-                    } catch (Throwable) {
-                        Log::error('Status kegagalan dispatch belum tersimpan; scheduler akan memulihkan deadline.', ['anomaly_check_id' => $check]);
-                    }
-                }
-            });
+            app(PredictionDispatch::class)->afterCommit($check);
 
             // Keep the accepted response independent of a second document query after commit.
             return $submission->setRelation('documents', $documents->values());
         });
     }
 
-    private function modelAllowed(object $model): bool
+    public function modelAllowed(object $model): bool
     {
         $stub = str_starts_with($model->version_code, 'stub-');
         $parameters = json_decode($model->parameters, true);

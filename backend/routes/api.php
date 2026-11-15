@@ -24,6 +24,8 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
     Route::get('/document-versions/{document}/download', [DocumentController::class, 'download'])->whereNumber('document');
 
     Route::prefix('internal')->middleware(RequireReviewer::class)->group(function () {
+        Route::get('/submissions/{submission}/anomaly-checks', [InternalApplicationController::class, 'checks'])->whereNumber('submission');
+        Route::post('/submissions/{submission}/anomaly-checks', [InternalApplicationController::class, 'retry'])->whereNumber('submission');
         Route::post('/submissions/{submission}/verification-results', [InternalApplicationController::class, 'verify'])->whereNumber('submission');
         Route::get('/applications', [InternalApplicationController::class, 'index']);
         Route::get('/application-summary', [InternalApplicationController::class, 'summary']);
