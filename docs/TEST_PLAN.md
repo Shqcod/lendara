@@ -20,7 +20,11 @@ Status yang dicentang hanya jika benar-benar dijalankan. Simpan command, environ
 
 Pastikan NOT NULL yang dibutuhkan untuk marker unik tidak dapat dilewati. Uji concurrency claim benar-benar memakai koneksi/transaksi independen (barrier/sinkronisasi), bukan dua panggilan berurutan yang hanya mensimulasikan race. Hanya satu tugas dan efek riwayat yang commit.
 
-Pada irisan schema/profil/draf, `DomainConcurrencyTest` membuktikan dua proses/transaksi bersamaan untuk create draf (satu aplikasi + satu activity log) dan insert assignment aktif (satu row). Fixture konkurensi dipersistenkan secara unik hanya pada DB test agar terlihat oleh kedua koneksi; tidak ada reset DB. Claim melalui endpoint dan riwayat penugasan tetap harus dibuktikan saat API internal diimplementasikan.
+Pada irisan schema/profil/draf, `DomainConcurrencyTest` membuktikan dua proses/transaksi bersamaan untuk create draf (satu aplikasi + satu activity log) dan insert assignment aktif (satu row). Fixture konkurensi dipersistenkan secara unik hanya pada DB test agar terlihat oleh kedua koneksi; tidak ada reset DB. Irisan 15 November menambah pembuktian route claim dan riwayat sesuai rincian berikut.
+
+Irisan internal menambah InternalQueueTest (scope tiga peran/status/filter/summary, kepemilikan, pointer, release/alasan/riwayat, larangan skip tahap, snapshot/unduh arsip, dokumen kerja belum dikirim tertutup, akun/peran dicek ulang, rollback audit). DomainConcurrencyTest kini menguji dua claim melalui HTTP kernel pada proses/koneksi independen: observasi data_lock_waits mendahului commit A, lalu 201/409 dan satu pemilik/log. Ini terpisah dari pembuktian cookie/CSRF browser. ReviewerBootstrapTest membuktikan tiga role via secret prompt/audit dan penolakan production, tanpa kredensial bawaan.
+
+Chrome internal.spec.ts memakai fixture fiktif dengan guard PDO test dan password acak lewat stdin. Dua sesi melakukan claim stale (409), claim/release yang commit tetapi respons diputus (tanpa replay), baca ulang pemilik, cancel/reason release, claim oleh reviewer kedua, arsip/unduh, tiga scope tahap dan admin ditolak, desktop/320px. Tahap approval dan riwayat pada fixture bukan bukti workflow verifikasi/persetujuan yang belum dibuat. Jalankan PHPUnit dan Chrome berurutan pada DB test yang sama.
 
 ## Nasabah/dokumen
 

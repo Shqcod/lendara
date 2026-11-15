@@ -3,10 +3,12 @@
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\InternalApplicationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\RequireCustomer;
+use App\Http\Middleware\RequireReviewer;
 use App\Http\Middleware\RequireSpaSession;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +21,16 @@ Route::middleware(RequireSpaSession::class)->group(function () {
 Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::class])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/document-versions/{document}/download', [DocumentController::class, 'download'])->whereNumber('document');
+
+    Route::prefix('internal')->middleware(RequireReviewer::class)->group(function () {
+        Route::get('/applications', [InternalApplicationController::class, 'index']);
+        Route::get('/application-summary', [InternalApplicationController::class, 'summary']);
+        Route::get('/applications/{application}', [InternalApplicationController::class, 'show'])->whereNumber('application');
+        Route::get('/applications/{application}/submissions/{submission}', [InternalApplicationController::class, 'snapshot'])->whereNumber(['application', 'submission']);
+        Route::post('/applications/{application}/assignments', [InternalApplicationController::class, 'claim'])->whereNumber('application');
+        Route::post('/assignments/{assignment}/release', [InternalApplicationController::class, 'release'])->whereNumber('assignment');
+    });
 
     Route::middleware(RequireCustomer::class)->group(function () {
         Route::post('/applications/{application}/submissions', [SubmissionController::class, 'store'])->whereNumber('application');
@@ -28,7 +40,6 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
         Route::get('/document-types', [DocumentController::class, 'types']);
         Route::get('/applications/{application}/documents', [DocumentController::class, 'index'])->whereNumber('application');
         Route::post('/applications/{application}/documents', [DocumentController::class, 'store'])->whereNumber('application');
-        Route::get('/document-versions/{document}/download', [DocumentController::class, 'download'])->whereNumber('document');
         Route::get('/customer/profile', [ProfileController::class, 'show']);
         Route::patch('/customer/profile', [ProfileController::class, 'update']);
         Route::get('/applications', [ApplicationController::class, 'index']);

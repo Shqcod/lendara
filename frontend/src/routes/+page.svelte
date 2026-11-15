@@ -110,7 +110,8 @@
 			{#if user}
 				<dl class="account"><div><dt>Email</dt><dd>{user.email}</dd></div><div><dt>Peran</dt><dd>{user.role}</dd></div></dl>
 				{#if user.role === 'nasabah'}<a class="primary workspace-link" href="/customer">Buka ruang nasabah <span aria-hidden="true">↗</span></a>
-				{:else}<p class="development-note">Akses akun siap digunakan. Fitur peninjauan internal sedang dikembangkan.</p>{/if}
+				{:else if ['verifikator', 'penyetuju_1', 'penyetuju_2'].includes(user.role)}<a class="primary workspace-link" href="/internal">Buka antrean internal <span aria-hidden="true">↗</span></a>
+				{:else}<p class="development-note">Pengelolaan akun admin tersedia pada tahap pengembangan berikutnya.</p>{/if}
 				<button class="primary" onclick={checkSession} disabled={busy}>Periksa sesi</button>
 				<button class="secondary" onclick={logout} disabled={busy || uncertain}>Keluar</button>
 			{:else}

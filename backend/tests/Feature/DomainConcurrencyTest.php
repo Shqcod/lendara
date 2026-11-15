@@ -16,7 +16,7 @@ class DomainConcurrencyTest extends TestCase
 
     // Intentionally no DatabaseTransactions: both connections need committed fixtures.
     // Unique synthetic records stay in the test database; no user data is cleaned up.
-    private function race(string $mode, int $actor, int $application = 0, int $submission = 0): array
+    private function race(string $mode, int $actor, int $application = 0, int $submission = 0, ?int $secondActor = null): array
     {
         $directory = storage_path('framework/testing/concurrency/'.Str::uuid());
         mkdir($directory, 0777, true);
@@ -27,7 +27,7 @@ class DomainConcurrencyTest extends TestCase
         foreach (['a', 'b'] as $worker) {
             $processes[$worker] = new Process([
                 PHP_BINARY, base_path('tests/Support/concurrent-worker.php'), $mode,
-                (string) $actor, (string) $application, (string) $submission, $directory, $worker,
+                (string) ($worker === 'b' ? ($secondActor ?? $actor) : $actor), (string) $application, (string) $submission, $directory, $worker,
             ], base_path(), ['APP_ENV' => 'testing'], timeout: 25);
             $processes[$worker]->start();
         }
@@ -55,6 +55,23 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
+            if ($mode === 'claim_http') {
+                $a = (int) file_get_contents($directory.'/a.ready');
+                $b = (int) file_get_contents($directory.'/b.ready');
+                $until = microtime(true) + 8;
+                do {
+                    $waiting = DB::selectOne('SELECT COUNT(*) AS n FROM performance_schema.data_lock_waits w
+                        JOIN performance_schema.threads r ON r.THREAD_ID = w.REQUESTING_THREAD_ID
+                        JOIN performance_schema.threads b ON b.THREAD_ID = w.BLOCKING_THREAD_ID
+                        WHERE r.PROCESSLIST_ID = ? AND b.PROCESSLIST_ID = ?', [$b, $a])->n;
+                    if ($waiting) {
+                        break;
+                    }
+                    usleep(20000);
+                } while (microtime(true) < $until);
+                $this->assertGreaterThan(0, $waiting, 'MySQL must observe B actually waiting for A before A commits.');
+                fwrite(STDOUT, 'MySQL observed claim lock wait: '.$b.' waits for '.$a.PHP_EOL);
+            }
             touch($directory.'/release');
             $results = [];
             foreach ($processes as $process) {
@@ -122,5 +139,21 @@ class DomainConcurrencyTest extends TestCase
         $this->assertSame(1, DB::table('anomaly_checks')->where('submission_id', $submission->id)->count());
         $this->assertSame(1, DB::table('application_status_histories')->where('application_id', $application)->count());
         $this->assertSame(1, DB::table('activity_logs')->where('actor_id', $customer->id)->where('action', 'application_submission.created')->count());
+    }
+
+    public function test_concurrent_claim_routes_commit_one_owner_and_one_claim_history_log(): void
+    {
+        $application = $this->loan(overrides: ['status' => 'pending_verification']);
+        $submission = $this->submission($application);
+        DB::table('loan_applications')->where('id', $application)->update(['current_submission_id' => $submission]);
+        $first = User::factory()->create(['role' => 'verifikator']);
+        $second = User::factory()->create(['role' => 'verifikator']);
+        $results = $this->race('claim_http', $first->id, $application, $submission, $second->id);
+        $this->assertSame([201, 409], array_column($results, 'http_status'));
+        $this->assertSame(['created', 'ASSIGNMENT_ALREADY_CLAIMED'], array_column($results, 'result'));
+        $assignment = DB::table('assignments')->where('application_id', $application)->sole();
+        $this->assertSame($first->id, $assignment->assigned_to);
+        $this->assertSame(1, DB::table('activity_logs')->where('action', 'assignment.claimed')->where('target_id', $assignment->id)->count());
+        $this->assertSame(0, DB::table('application_status_histories')->where('application_id', $application)->count());
     }
 }

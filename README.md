@@ -2,7 +2,7 @@
 
 **Lendara** adalah nama produk dengan folder utama `lendara`. Judul akademik proyek: **Rancang Bangun Sistem Pengajuan Pinjaman Berbasis Web dengan Deteksi Anomali dan Persetujuan Berjenjang**.
 
-Laravel 12 dan SvelteKit TypeScript menyediakan autentikasi cookie Sanctum, profil/draf/dokumen privat, tinjau/kirim, arsip snapshot, serta riwayat status nasabah. Pengiriman atomik membuat pemeriksaan pada database queue dengan deadline dan hasil kondisional. **Irisan nasabah terverifikasi melalui MySQL nyata dan browser Chrome**; rincian ada di PROGRESS. Backend kirim ulang diuji dengan status revisi fixture; alur revisi browser, akses internal, claim/verifikasi/persetujuan, retry manual, dan model terlatih belum selesai. FastAPI masih stub; jangan menyamakannya dengan evaluasi ML.
+Laravel 12 dan SvelteKit TypeScript menyediakan irisan nasabah, pengiriman snapshot, serta antrean/detail/claim/release internal dengan scope tiga peran dan dokumen privat. Pengiriman membuat pemeriksaan database queue dengan deadline dan hasil kondisional. **Irisan nasabah serta antrean/penugasan terverifikasi pada MySQL nyata dan Chrome**; rincian di PROGRESS. Aksi verifikasi/revisi/forward/persetujuan, retry manual, admin, dan model terlatih belum selesai. FastAPI masih stub; jangan menyamakannya dengan evaluasi ML.
 
 Lihat [panduan setup dan pengujian](docs/SETUP.md) serta [status nyata](docs/PROGRESS.md). Node sistem 22.13.1 tetap; frontend memakai Node 22.23.4 portable di `.tools/` melalui `scripts/frontend.ps1` karena scaffold SvelteKit 3 memerlukan Node minimal 22.17. Dependensi dan lockfile disertakan; `.tools/`, vendor, node_modules, dan rahasia lokal diabaikan Git.
 
@@ -58,6 +58,8 @@ Setelah masuk sebagai nasabah, pilih **Buka ruang nasabah** untuk menuju `/custo
 Pengiriman memerlukan model aktif yang sesuai; jika belum siap, data kerja tetap tersimpan dan API mengembalikan 503. Untuk pengembangan lokal **mode stub**, dari backend jalankan secara eksplisit `php artisan ml:register-stub --activate` bila ingin mengaktifkan stub-v0. Perintah menolak mengganti model aktif lain dan tidak berlaku pada demo/production. Tidak ada aktivasi database pengembangan otomatis. Jalankan worker dan scheduler sesuai SETUP; kunci ML diatur lokal tanpa membagikannya ke chat.
 
 Helper backend membatasi upload PHP 5M dan post 8M hanya pada proses server, tanpa mengubah php.ini atau .env. Webserver demo/deployment harus menyelaraskan batas yang sama; rincian 413/422 di SETUP.
+
+Peninjau masuk melalui halaman yang sama, lalu pilih **Buka antrean internal** menuju `/internal`: Antrean pengajuan, Tugas saya, pencarian nomor lengkap, detail/arsip, unduhan, claim dan release beralasan. Verifikator dan penyetuju hanya melihat tahap masing-masing; admin tidak mendapat akses berkas. Jika perlu akun lokal baru, jalankan dari backend `php artisan users:create-reviewer`: nama/email/peran dan kata sandi diminta interaktif, tanpa kata sandi bawaan. Command hanya local/testing dan tidak dijalankan otomatis pada DB pengembangan. UI aksi verifikasi/persetujuan belum tersedia.
 
 Queue Windows: `--timeout=0` bukan pengamanan terminasi. Deadline database, HTTP timeout, scheduler, dan pengaman efek DB duplikat kini tersedia. Baca ENVIRONMENT. Runtime Linux dengan PCNTL diperlukan untuk menguji penghentian worker paksa sebagaimana rencana 30 detik.
 

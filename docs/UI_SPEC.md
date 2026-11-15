@@ -8,7 +8,7 @@ Wireframe berbentuk pratinjau pernah ditinjau pengguna; file visual asli tidak d
 - Judul halaman: `<Nama halaman> | Lendara`, misalnya `Masuk | Lendara` atau `Pengajuan Saya | Lendara`; judul bawaan aplikasi `Lendara`.
 - Metadata deskripsi aplikasi: `Lendara adalah prototipe akademik pengajuan pinjaman dengan deteksi anomali dan persetujuan berjenjang.` Gunakan nama Lendara juga pada metadata berbagi atau manifest jika ditambahkan.
 - Judul akademik tetap **Rancang Bangun Sistem Pengajuan Pinjaman Berbasis Web dengan Deteksi Anomali dan Persetujuan Berjenjang** pada laporan dan dokumentasi akademik.
-- Frontend menyediakan masuk/daftar, status sesi, beranda akun, `/customer` untuk profil/draf/dokumen, serta `/customer/applications/{id}` untuk tinjau/kirim/arsip/riwayat nasabah. Peninjauan internal masih tahap berikutnya; hasil uji aktual mengikuti PROGRESS. Tidak ada autentikasi SSR atau store data nasabah global server pada irisan ini.
+- Frontend menyediakan masuk/daftar, status sesi, beranda akun, irisan nasabah, dan `/internal` untuk antrean/claim/release/detail/arsip peninjau. Aksi verifikasi/persetujuan/retry masih tahap berikutnya; hasil uji aktual mengikuti PROGRESS. Tidak ada autentikasi SSR atau store data nasabah global server pada irisan ini.
 
 ## Halaman
 
@@ -26,6 +26,8 @@ Wireframe berbentuk pratinjau pernah ditinjau pengguna; file visual asli tidak d
 - Admin: daftar/tambah/ubah akun internal, satu peran; edit role saat tidak ada tugas aktif. Nonaktif konfirmasi + alasan + dampak pelepasan tugas/sesi; aktifkan kembali tidak mengembalikan tugas otomatis. Log pelaku/tindakan/objek/waktu/detail aman.
 
 ## Perilaku wajib
+
+Irisan `/internal` menyediakan navigasi Antrean pengajuan/Tugas saya/Semua pada tahap ini, summary per tahap, filter penanggung jawab, pencarian nomor lengkap dan pagination. Detail menampilkan snapshot terkini/arsip, berkas per versi, hasil pemeriksaan internal, pemilik dan riwayat tugas/status. Arsip hanya baca; tombol tugas mengacu pada versi terkini. Claim/release tidak mengubah status pinjaman. Release memerlukan alasan dan dialog konfirmasi. Respons mutasi terputus/konflik/5xx mengunci tindakan sampai baca ulang; tidak replay POST. Perubahan akun/peran membersihkan state lama. Hak backend tetap otoritas. Admin tidak melihat antrean atau berkas lewat halaman ini.
 
 - Mobile sampai 320px tanpa kontrol penting terpotong; tabel reflow/scroll terlokalisasi bila perlu.
 - Label input nyata, keyboard/fokus dapat digunakan, status tidak hanya warna, pesan error per field.

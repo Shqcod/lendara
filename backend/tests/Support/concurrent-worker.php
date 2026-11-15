@@ -1,12 +1,15 @@
 <?php
 
 use App\Exceptions\DomainError;
+use App\Models\User;
 use App\Services\CustomerDocuments;
 use App\Services\CustomerSubmissions;
 use App\Services\CustomerWorkspace;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 // CLI-only worker for real, overlapping MySQL transactions. No credentials in argv/output.
@@ -43,6 +46,17 @@ try {
     }
     if ($mode === 'draft') {
         app(CustomerWorkspace::class)->createDraft((int) $actor, []);
+    } elseif ($mode === 'claim_http') {
+        Auth::guard('web')->setUser(User::findOrFail($actor));
+        $request = Request::create('/api/v1/internal/applications/'.$application.'/assignments', 'POST', [], [], [],
+            ['HTTP_ORIGIN' => 'http://localhost:5173', 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
+            json_encode(['expected_current_submission_id' => (int) $submission]));
+        $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
+        $httpStatus = $response->getStatusCode();
+        if (! in_array($httpStatus, [201, 409], true)) {
+            throw new RuntimeException('Unexpected claim status '.$httpStatus);
+        }
+        $claimResult = $httpStatus === 201 ? 'created' : json_decode($response->getContent(), true)['code'];
     } elseif ($mode === 'submission') {
         app(CustomerSubmissions::class)->submit((int) $actor, (int) $application, null);
     } elseif ($mode === 'document') {
@@ -61,7 +75,7 @@ try {
         $wait($directory.'/release');
     }
     DB::commit();
-    echo json_encode(['connection' => $connection, 'result' => 'created'], JSON_THROW_ON_ERROR);
+    echo json_encode(['connection' => $connection, 'result' => $claimResult ?? 'created', 'http_status' => $httpStatus ?? null], JSON_THROW_ON_ERROR);
 } catch (DomainError $error) {
     DB::rollBack();
     echo json_encode(['connection' => $connection, 'result' => $error->domainCode], JSON_THROW_ON_ERROR);

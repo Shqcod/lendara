@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup autentikasi, schema 14 tabel, profil/draf/dokumen, dan pengiriman/arsip/riwayat nasabah lulus MySQL nyata dan Chrome. Job queue prediksi, conditional persistence, dan deadline scheduler tersedia. Akses dokumen internal, claim/verifikasi/persetujuan, retry manual, serta model asli masih tahap berikutnya; browser revisi/kirim ulang menunggu internal.
+Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi/persetujuan/retry manual, admin, model asli dan browser revisi/kirim ulang nyata masih tahap berikutnya.
 
 ## Runtime
 
@@ -70,6 +70,14 @@ php artisan schedule:work
 Perintah pertama hanya mendaftarkan metadata kode stub yang nyata dan tidak aktif secara otomatis. --activate menolak model aktif lain, metadata kode yang berbeda, mode model, atau lingkungan selain local/testing. Baris stub memakai trained=false, code://..., dan hash kode, bukan artefak terlatih. Database dev tidak diaktifkan otomatis pada sesi implementasi. Siapkan worker dan scheduler pada terminal berbeda; field key tetap lokal. Pada testing tambahkan --env=testing dan pastikan guard efektif sebelum mutasi. Harness Chrome memakai -PrepareStubModel setelah guard DB test untuk fixture stub-v0; tidak mengganti model aktif lain.
 
 RunPrediction memakai database queue predictions, cache database lock per check, HTTP tanpa retry maksimal min(20,sisa-5), dan deadline 120 detik. Enqueue sesudah commit yang gagal tetap mengembalikan 202/snapshot tersimpan. Scheduler anomalies:expire memulihkan processing lewat deadline sebagai failed, tanpa mengubah status bisnis atau otomatis mengulang inference. Queue/cache tables perlu izin DB runtime yang sesuai. PCNTL/kill worker POSIX tetap belum dibuktikan; --timeout=0 Windows bukan jaminan terminasi, dan timeout job 30 detik hanya efektif pada runtime yang mendukungnya. ML_DEADLINE_SECONDS pada contoh lama belum dibaca runtime: deadline domain tetap 120 sesuai kontrak.
+
+## Akun dan UI peninjau lokal
+
+Gunakan akun verifikator, penyetuju_1, atau penyetuju_2 yang sudah ada. Untuk menambah akun baru secara eksplisit di local/testing, dari backend jalankan `php artisan users:create-reviewer`. Nama/email/peran dipilih di terminal; password/konfirmasi memakai secret prompt, tidak lewat argv, file, chat, atau log. Tidak ada password bawaan, tidak mengubah akun lama, dan tidak berlaku pada production. Command diuji hanya pada DB test; sesi ini tidak membuat akun di DB pengembangan. Admin API/provisioning deployment belum tersedia.
+
+Setelah login pilih **Buka antrean internal**. Verifikator hanya pending_verification, penyetuju 1/2 masing-masing pending_approval_1/2. Halaman menampilkan summary seluruh tahap peran, filter/pencarian nomor/pagination, snapshot terkini/arsip, hasil internal dan riwayat. Ambil tugas menulis penugasan, lepas memerlukan alasan; status pinjaman tetap. Reviewer lain dapat membaca dalam tahapnya tetapi tidak melepas tugas orang lain. Dokumen kerja yang belum ditautkan ke snapshot tetap tertutup. Aksi verifikasi/persetujuan/retry tersedia pada tahap pengembangan berikutnya.
+
+Chrome internal.spec.ts membuat fixture reviewer/snapshot tahap via helper CLI khusus testing dengan pemeriksaan konfigurasi dan SELECT DATABASE() efektif. Password acak hanya melalui stdin dan memori test. Fixture approval adalah data uji scope, bukan klaim workflow tingkat sebelumnya telah diimplementasikan. Uji dua claim bersamaan melalui HTTP kernel juga membaca performance_schema.data_lock_waits/threads untuk membuktikan wait aktual; user DB pengujian memerlukan izin baca diagnostik itu. Jangan memperluas grant user runtime produksi demi pengujian.
 
 ## Verifikasi
 

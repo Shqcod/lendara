@@ -111,7 +111,7 @@ class CustomerDocumentsTest extends TestCase
             $this->getJson('/api/v1/document-types')->assertForbidden();
             $this->getJson('/api/v1/applications/'.$this->application.'/documents')->assertForbidden();
             $this->postJson('/api/v1/applications/'.$this->application.'/documents', [])->assertForbidden();
-            $this->getJson('/api/v1/document-versions/'.$document.'/download')->assertForbidden();
+            $this->getJson('/api/v1/document-versions/'.$document.'/download')->assertStatus($role === 'admin' ? 403 : 404);
         }
         $this->app['auth']->forgetGuards();
         $this->app['auth']->guard('web')->logout();

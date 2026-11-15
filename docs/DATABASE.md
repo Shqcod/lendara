@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/dokumen/pengiriman dan job prediksi tersedia, tetapi persetujuan/internal belum diimplementasikan. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikasi/persetujuan/admin masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -77,6 +77,14 @@ Callback DB afterCommit secara eksplisit membungkus dispatch database queue pred
 RunPrediction memakai lock eksekusi per check pada cache database (60 detik), tries=1, timeout job 30 detik. Context dibaca lalu HTTP dijalankan tanpa transaksi; handler menolak bila sudah berada dalam transaksi. Timeout HTTP min(20, konfigurasi timeout, sisa deadline-5); budget tidak cukup langsung failed. Hasil disimpan lewat transaksi pendek dengan lock aplikasi → check, memeriksa status processing, deadline, snapshot terkini, identitas/schema/model/source, skor finite dan konsistensi tanda. Respons lama/duplikat tidak mengubah terminal state dan menghasilkan audit ID/reason aman. Tidak ada perubahan status pengajuan otomatis oleh hasil model.
 
 Command anomalies:expire menandai processing melewati deadline sebagai failed secara kondisional, dijadwalkan setiap menit dengan lingkungan aplikasi diteruskan eksplisit ke subprocess. Worker/scheduler memakai DB runtime yang sama dengan aplikasi; testing dibuktikan pada kkp_pinjaman_test. Job yang hilang dapat dipulihkan sebagai failed, bukan inference otomatis ulang. Ini jaminan efek DB kondisional, bukan exactly-once HTTP atau bukti penghentian worker POSIX pada Windows.
+
+## Penugasan dan scope internal
+
+ReviewAssignments mengunci user reviewer aktif → aplikasi dalam scope tahap → assignment. Claim memeriksa expected current_submission_id, mengalokasikan baris baru dengan stage/assigned_to dari server, dan menulis audit dalam transaksi. Unique active_application_id tetap menjamin satu aktif global. Release hanya pemilik pada tahap/versi terkini; ended_at/end_type=released/end_reason/ended_by dan audit diubah atomik. assigned_to pada riwayat lama tidak diubah. Status loan_applications/current_submission_id dan snapshot tetap; tidak ada row status_histories baru untuk claim/release karena tidak terjadi transisi status.
+
+Uji concurrency menjalankan HTTP kernel route claim pada dua proses PHP/koneksi/transaksi terpisah. Barrier menahan commit A; performance_schema.data_lock_waits membuktikan B benar-benar menunggu lock A sebelum A dilepas. Hasil 201/409, satu assignment/pemilik/log claim. Ini pengujian route melalui kernel dan MySQL nyata, bukan dua request serial; CSRF/cookie jaringan dibuktikan terpisah dengan Chrome.
+
+Scope internal menggunakan status tahap peran saat ini dan current_submission_id non-null. Detail/nama/uang/dokumen berasal dari snapshot, bukan profil kerja. Arsip pada pengajuan yang masih dalam scope dapat dibaca; unduh versi juga memeriksa tautan submission_documents ke pengajuan dan jenis yang sesuai. Admin dan nasabah tidak mendapat route internal. Ringkasan menggunakan satu agregasi SQL atas assignment aktif agar hitungan tidak saling bertentangan saat claim/release berlomba. Tidak ada schema/migration/grant baru pada irisan ini.
 
 ## Pendukung Laravel
 

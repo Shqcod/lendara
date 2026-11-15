@@ -7,3 +7,5 @@ Node seri 22 minimal 22.17 diperlukan. Dari root proyek gunakan `powershell -Exe
 Pemeriksaan dari root: ganti `run dev` dengan `run check`, `run build`, atau `run test:e2e`. Uji browser memakai Chrome dan database test terpisah; baca [SETUP](../docs/SETUP.md) sebelum menjalankan. Lockfile harus dipertahankan.
 
 Konfigurasi publik hanya `PUBLIC_API_BASE_URL`; kunci ML dan kredensial database tidak boleh berada pada frontend. Status nyata dan keterbatasan tercatat di [PROGRESS](../docs/PROGRESS.md).
+
+`/internal` menyediakan antrean/Tugas saya, filter/pencarian nomor, summary, claim/release beralasan, detail snapshot/arsip/dokumen/hasil internal dan riwayat. Akses tiga reviewer dibatasi tahap server; admin tidak mendapat akses otomatis. Hasil mutasi jaringan tidak pasti harus dibaca ulang tanpa replay. UI aksi verifikasi/persetujuan/retry belum tersedia. Bootstrap akun lokal memakai secret prompt pada command backend sesuai SETUP; tidak ada kredensial bawaan di frontend/repo.
