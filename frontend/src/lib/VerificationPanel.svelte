@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ReviewSnapshot } from '#lib/internal.ts';
 	import { timeWib } from '#lib/workspace.ts';
-	let { snapshot, disabled, locked, submit, page }: { snapshot: ReviewSnapshot; disabled: boolean; locked: boolean; submit: (type: string, notes: string, checklist: Record<string, boolean>) => Promise<void>; page: (value: number) => void } = $props();
+	let { snapshot, disabled, locked, readOnly = false, submit, page }: { snapshot: ReviewSnapshot; disabled: boolean; locked: boolean; readOnly?: boolean; submit: (type: string, notes: string, checklist: Record<string, boolean>) => Promise<void>; page: (value: number) => void } = $props();
 	let notes = $state('');
 	let checklist = $state<Record<string, boolean>>({});
 	let action = $state('');
@@ -16,7 +16,7 @@
 </script>
 <h3>Catatan dan tindakan verifikasi</h3>
 <p class="muted">Checklist mencatat dokumen yang ditinjau. Alasan revisi akan terlihat oleh nasabah; catatan lainnya hanya untuk peninjau internal.</p>
-<fieldset disabled={disabled || locked}>
+{#if !readOnly}<fieldset disabled={disabled || locked}>
 	<legend>Dokumen yang telah ditinjau</legend>
 	{#each snapshot.documents as file}<label><input type="checkbox" checked={checklist[String(file.document_type_id)] ?? false} onchange={(event) => checklist = { ...checklist, [String(file.document_type_id)]: event.currentTarget.checked }} /> {file.original_filename}</label>{/each}
 	<label for="verification-notes">Catatan / alasan revisi</label>
@@ -24,6 +24,7 @@
 	<div class="actions">{#each ['note', 'request_revision', 'forward'] as type}<button type="button" disabled={disabled || locked || (type === 'forward' && !succeeded)} onclick={() => { action = type; dialog?.showModal(); }}>{labels[type]}</button>{/each}</div>
 </fieldset>
 {#if !succeeded}<p>Teruskan tersedia setelah pemeriksaan anomali berhasil.</p>{/if}
+{/if}
 <h3>Riwayat verifikasi versi ini</h3>
 <ol>{#each snapshot.verification_results.data as result}<li>{labels[result.result_type]} · {timeWib(result.created_at)}<p>{result.notes || 'Tanpa catatan tambahan'}</p><ul>{#each Object.entries(result.document_checklist) as [type, checked]}<li>{snapshot.documents.find((file) => String(file.document_type_id) === type)?.original_filename || type}: {checked ? 'Ditinjau' : 'Belum ditinjau'}</li>{/each}</ul></li>{/each}</ol>
 <div class="actions"><button onclick={() => page(snapshot.verification_results.meta.current_page - 1)} disabled={disabled || snapshot.verification_results.meta.current_page <= 1}>Catatan sebelumnya</button><span>Halaman {snapshot.verification_results.meta.current_page}/{snapshot.verification_results.meta.last_page}</span><button onclick={() => page(snapshot.verification_results.meta.current_page + 1)} disabled={disabled || snapshot.verification_results.meta.current_page >= snapshot.verification_results.meta.last_page}>Catatan berikutnya</button></div>

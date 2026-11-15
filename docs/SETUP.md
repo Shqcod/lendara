@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi/persetujuan/retry manual, admin, model asli dan browser revisi/kirim ulang nyata masih tahap berikutnya.
+Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi, retry manual, persetujuan tingkat 1/2 serta browser revisi/kirim ulang tersedia; admin dan model asli masih tahap berikutnya.
 
 ## Runtime
 
@@ -75,7 +75,7 @@ RunPrediction memakai database queue predictions, cache database lock per check,
 
 Gunakan akun verifikator, penyetuju_1, atau penyetuju_2 yang sudah ada. Untuk menambah akun baru secara eksplisit di local/testing, dari backend jalankan `php artisan users:create-reviewer`. Nama/email/peran dipilih di terminal; password/konfirmasi memakai secret prompt, tidak lewat argv, file, chat, atau log. Tidak ada password bawaan, tidak mengubah akun lama, dan tidak berlaku pada production. Command diuji hanya pada DB test; sesi ini tidak membuat akun di DB pengembangan. Admin API/provisioning deployment belum tersedia.
 
-Setelah login pilih **Buka antrean internal**. Verifikator hanya pending_verification, penyetuju 1/2 masing-masing pending_approval_1/2. Halaman menampilkan summary seluruh tahap peran, filter/pencarian nomor/pagination, snapshot terkini/arsip, hasil internal dan riwayat. Ambil tugas menulis penugasan, lepas memerlukan alasan; status pinjaman tetap. Reviewer lain dapat membaca dalam tahapnya tetapi tidak melepas tugas orang lain. Dokumen kerja yang belum ditautkan ke snapshot tetap tertutup. Aksi catatan/revisi/forward tersedia untuk verifikator pemilik tugas aktif; retry manual tersedia; persetujuan pada tahap berikutnya.
+Setelah login pilih **Buka antrean internal**. Verifikator hanya pending_verification, penyetuju 1/2 masing-masing pending_approval_1/2. Halaman menampilkan summary seluruh tahap peran, filter/pencarian nomor/pagination, snapshot terkini/arsip, hasil internal dan riwayat. Ambil tugas menulis penugasan, lepas memerlukan alasan; status pinjaman tetap. Reviewer lain dapat membaca dalam tahapnya tetapi tidak melepas tugas orang lain. Dokumen kerja yang belum ditautkan ke snapshot tetap tertutup. Aksi catatan/revisi/forward tersedia untuk verifikator pemilik tugas aktif; retry manual tersedia; persetujuan tingkat 1/2 tersedia.
 
 Chrome internal.spec.ts membuat fixture reviewer/snapshot tahap via helper CLI khusus testing dengan pemeriksaan konfigurasi dan SELECT DATABASE() efektif. Password acak hanya melalui stdin dan memori test. Fixture approval adalah data uji scope, bukan klaim workflow tingkat sebelumnya telah diimplementasikan. Uji dua claim bersamaan melalui HTTP kernel juga membaca performance_schema.data_lock_waits/threads untuk membuktikan wait aktual; user DB pengujian memerlukan izin baca diagnostik itu. Jangan memperluas grant user runtime produksi demi pengujian.
 

@@ -54,6 +54,13 @@ class InternalReadModel
             return $result;
         }));
 
+        $data['approval_decisions'] = DB::table('approval_decisions')->where('submission_id', $id)->orderBy('level')
+            ->get(['id', 'level', 'decision', 'notes', 'anomaly_check_id', 'decided_at'])->map(function ($decision) {
+                $decision->decided_at = Carbon::parse($decision->decided_at)->utc()->toIso8601String();
+
+                return $decision;
+            })->all();
+
         return $data;
     }
 

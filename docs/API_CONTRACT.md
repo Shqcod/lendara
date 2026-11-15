@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia; admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -63,7 +63,7 @@ Body pengajuan: loan_amount,tenor_months,purpose,monthly_income,monthly_expenses
 - Unduhan melalui policy kepemilikan/scope internal, attachment, MIME server, Cache-Control no-store/private, dan X-Content-Type-Options nosniff. File hilang 404. Admin tetap 403. Reviewer hanya dapat mengunduh versi yang ditautkan ke snapshot pengajuan dalam tahapnya; versi kerja yang belum ditautkan dan pengajuan di luar scope 404.
 - PHP bawaan Laragon teramati mengizinkan 2G; helper start-backend membatasi proses lokal menjadi upload_max_filesize=5M dan post_max_size=8M. Post melewati batas server menghasilkan 413 PAYLOAD_TOO_LARGE; file melewati batas upload PHP/validasi menghasilkan 422 pada field file. UI menangani keduanya tanpa mengulang unggahan otomatis.
 
-Bagian internal mencakup antrean/baca/claim/release dan aksi verifikator; persetujuan dan retry manual masih target. Keberadaan tabel tidak membuktikan seluruh workflow selesai.
+Bagian internal mencakup antrean/baca/claim/release dan aksi verifikator; persetujuan tingkat 1/2 dan retry manual juga tersedia. Keberadaan tabel tidak membuktikan seluruh workflow selesai.
 
 Upload satu file/request; PDF/JPG/JPEG/PNG max 5 MB, validasi MIME/isi + ekstensi. Nama storage dibuat server. Config PHP/webserver diselaraskan, 413 dinormalisasi jika memungkinkan. File versi lama dipertahankan. Download nasabah hanya miliknya; internal hanya verifikator/penyetuju pada tahap yang diizinkan. Admin tidak otomatis mendapat akses. Proteksi berlaku juga untuk dokumen lama yang terkait versi pengajuan tersebut.
 
@@ -118,7 +118,7 @@ Body: result_type note/request_revision/forward, notes nullable maksimal 16000 k
 
 201 data berisi id,submission_id,result_type,application_status. Note menambah konten/audit tanpa menutup tugas atau menambah status history. Revision/forward menutup tugas completed dan mengubah status ke revision_required/pending_approval_1 bersama konten/history/audit dalam satu transaksi. Scope verifikator berhenti setelah transisi; baca ulang antrean menghapus detail lama. Tidak replay mutasi setelah respons tidak pasti.
 
-Snapshot internal menambah verification_results berpaginasi 10 item (verification_page positif) termasuk id,verifier_id,result_type,notes,document_checklist,anomaly_check_id,created_at UTC. Resource nasabah tidak berubah: hanya alasan request_revision publik pada status-histories. Endpoint approval-decisions masih target berikutnya; retry/read-attempt tersedia.
+Snapshot internal menambah verification_results berpaginasi 10 item (verification_page positif) termasuk id,verifier_id,result_type,notes,document_checklist,anomaly_check_id,created_at UTC. Resource nasabah tidak berubah: hanya alasan request_revision publik pada status-histories. Endpoint approval-decisions dan retry/read-attempt tersedia.
 
 ## Kode domain
 
@@ -155,3 +155,11 @@ POST path yang sama menerima body kosong. Hanya verifikator aktif pemilik tugas 
 Retry memin model_version_id dan input_features percobaan sebelumnya, bukan profil kerja/model aktif terbaru. Model harus sesuai mode runtime (termasuk larangan stub demo/production), jika tidak 503 SERVICE_NOT_READY. Tidak memanggil readiness HTTP dalam transaksi. Ketersediaan model layanan diverifikasi saat job berjalan, tanpa fallback.
 
 202 data: id,submission_id,attempt_number,status=processing, berarti percobaan diterima, bukan hasil final. Audit dan percobaan baru/deadline 120 detik commit bersama. Tidak membuat snapshot/history/status bisnis/penutupan tugas baru. Job predictions didispatch setelah commit. Dispatch gagal tetap 202, status aktual failed/dispatch_failed bila dapat disimpan, atau dipulihkan scheduler; baca ulang status. Tidak ada retry POST/HTTP otomatis.
+
+## Persetujuan berjenjang yang tersedia
+
+POST /internal/submissions/{id}/approval-decisions menerima decision approved/rejected dan notes nullable maksimal 16000 karakter; penolakan wajib alasan tidak kosong. Level/approver_id/assignment_id/anomaly_check_id/status dari klien dilarang. Server menentukan level dari peran, tugas dan check succeeded dari snapshot. Anomali tidak otomatis menolak pengajuan; tidak menambahkan syarat notes anomali baru pada penyetuju.
+
+Hanya penyetuju aktif pemilik tugas aktif sesuai tahap/versi terkini. Peran lain/tanpa tugas/bukan pemilik 403; luar scope tahap 404; arsip 409 SUBMISSION_VERSION_CONFLICT. Tingkat 2 (setuju maupun tolak) wajib mempunyai approved tingkat 1 pada snapshot sama, selain itu 409 INVALID_STATUS_TRANSITION. Tanpa succeeded 409 ANOMALY_CHECK_NOT_READY. Penyetuju tidak meminta revisi. Duplikat yang sudah berpindah tahap 404, keputusan level yang telah ada pada tahap sama 409; unique per snapshot/level tetap aktif.
+
+201 data: id,submission_id,level,decision,application_status. Setuju L1 → pending_approval_2; setuju L2 → approved; tolak L1/L2 → rejected final. Keputusan, status history, update status, completed tugas dan activity log commit atomik. Tidak ada snapshot baru atau perubahan dokumen/check. Scope peninjau tahap lama berhenti setelah transisi. Snapshot internal menambah approval_decisions terurut level (maksimal dua karena unique), berisi id,level,decision,notes,anomaly_check_id,decided_at UTC. Nasabah hanya melihat status/waktu; notes penolakan/keputusan tetap internal dan bukan revision_reason.

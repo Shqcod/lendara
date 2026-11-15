@@ -1,0 +1,172 @@
+
+   PASS  Tests\Unit\PasswordHashTest
+  ✓ passwords differing after 72 bytes do not authenticate as the same password                                  0.75s
+
+   PASS  Tests\Unit\PredictionClientTest
+  ✓ internal fixture uses private key and validates response                                                     0.08s
+  ✓ mismatched identity or sign is rejected                                                                      0.03s
+
+   PASS  Tests\Feature\ApprovalActionsTest
+  ✓ two levels approve in order and keep snapshot immutable                                                      0.48s
+  ✓ both levels reject with required reason and final status                                                     0.12s
+  ✓ level two requires approved level one on same snapshot even for rejection                                    0.09s
+  ✓ scope owner version fields and no revision action                                                            0.12s
+  ✓ result required and audit failure rolls back all effects                                                     0.10s
+  ✓ locked actor is rechecked                                                                                    0.03s
+
+   PASS  Tests\Feature\AuthenticationTest
+  ✓ register creates only a customer without logging in                                                          0.44s
+  ✓ register rejects privileged fields and invalid password confirmation                                         0.05s
+  ✓ duplicate email has field validation and database constraint                                                 0.05s
+  ✓ each agreed role can login read safe identity and logout with data set #0                                    0.25s
+  ✓ each agreed role can login read safe identity and logout with data set #1                                    0.73s
+  ✓ each agreed role can login read safe identity and logout with data set #2                                    0.86s
+  ✓ each agreed role can login read safe identity and logout with data set #3                                    0.81s
+  ✓ each agreed role can login read safe identity and logout with data set #4                                    0.71s
+  ✓ wrong password and inactive account cannot login                                                             1.52s
+  ✓ inactive user loses access with existing session                                                             0.10s
+  ✓ bearer tokens cannot replace a browser session                                                               0.10s
+  ✓ login and registration are throttled                                                                         0.19s
+  ✓ only exact frontend origin receives credentialed cors headers                                                0.10s
+  ✓ mysql rejects an unknown role even when bypassing the model                                                  0.11s
+
+   PASS  Tests\Feature\CustomerDocumentsTest
+  ✓ uploads are versioned private and latest list does not leak storage or internal fields                       0.61s
+  ✓ old submission keeps its document after revision upload                                                      0.29s
+  ✓ cross customer guessing returns 404 before file validation                                                   0.28s
+  ✓ internal roles and anonymous cannot access customer document endpoints                                       0.42s
+  ✓ inactive customer cannot download                                                                            0.23s
+  ✓ upload rechecks active account inside transaction                                                            0.14s
+  ✓ upload is rejected in all non editable statuses but read remains available                                   0.31s
+  ✓ file content extension and exact five megabyte boundary                                                      0.77s
+  ✓ document types are explicit and inactive type and server fields are rejected                                 0.19s
+  ✓ large post is normalized to 413 json                                                                         0.11s
+  ✓ missing file is 404 and version instance cannot be updated                                                   0.19s
+  ✓ failed upload transaction preserves old version and enqueues compensating cleanup                            0.29s
+
+   PASS  Tests\Feature\CustomerSubmissionsTest
+  ✓ submission copies saved values documents and one processing attempt atomically                               0.85s
+  ✓ incomplete saved profile finance and documents have field errors without partial rows                        0.33s
+  ✓ request requires literal confirmation and explicit version token                                             0.33s
+  ✓ missing or incompatible model and demo stub are rejected without submitting                                  0.31s
+  ✓ revision creates new snapshot and keeps old profile finance and document links                               0.32s
+  ✓ customer reads are allowlisted and other customer and internal roles are denied                              0.50s
+  ✓ account is rechecked under lock and audit failure rolls back every submission row                            0.32s
+  ✓ history exposes only explicit revision reason and nested snapshot scope is enforced                          0.42s
+
+   PASS  Tests\Feature\CustomerWorkspaceTest
+  ✓ profile can be read without creating a row and saved partially                                               0.11s
+  ✓ profile validation and unique identity preserve the entire transaction                                       0.10s
+  ✓ customer routes require authentication and deny all internal roles                                           0.21s
+  ✓ draft can be incomplete and creation has a log without status history                                        0.15s
+  ✓ money keeps decimal precision and only type capacity is limited                                              0.19s
+  ✓ client cannot supply ownership status or internal results                                                    0.12s
+  ✓ cross customer detail edit delete and lists do not leak                                                      0.14s
+  ✓ forbidden workflow states cannot be edited or deleted                                                        0.17s
+  ✓ profile and revision edits do not mutate previous snapshot or expose internal notes                          0.12s
+  ✓ account and role are rechecked under lock during mutations                                                   0.12s
+  ✓ creation rolls back content and audit together                                                               0.10s
+  ✓ draft deletion keeps generic audit and does not create status history                                        0.12s
+  ✓ delete rollback preserves documents files and cancels persistent cleanup                                     0.14s
+PHPUnit effective connection: mysql / kkp_pinjaman_test / 8.0.30
+
+   PASS  Tests\Feature\DatabaseIsolationTest
+  ✓ phpunit effectively uses the separate mysql database                                                         0.11s
+MySQL observed claim lock wait: 2817 waits for 2816
+MySQL concurrent approval_http: connections 2816/2817, results created/out_of_scope
+MySQL observed claim lock wait: 2819 waits for 2818
+MySQL concurrent approval_http: connections 2818/2819, results created/out_of_scope
+MySQL observed claim lock wait: 2822 waits for 2821
+MySQL concurrent retry_http: connections 2821/2822, results created/retry_conflict
+MySQL observed claim lock wait: 2825 waits for 2824
+MySQL concurrent verification_http: connections 2824/2825, results created/out_of_scope
+MySQL concurrent draft: connections 2827/2828, results created/ACTIVE_APPLICATION_EXISTS
+MySQL concurrent assignment: connections 2830/2831, results created/unique_conflict
+MySQL concurrent document: connections 2833/2834, results created/created
+MySQL concurrent submission: connections 2836/2837, results created/SUBMISSION_VERSION_CONFLICT
+MySQL observed claim lock wait: 2840 waits for 2839
+MySQL concurrent claim_http: connections 2839/2840, results created/ASSIGNMENT_ALREADY_CLAIMED
+
+   PASS  Tests\Feature\DomainConcurrencyTest
+  ✓ concurrent approval at each level commits only one decision                                                  1.72s
+  ✓ concurrent retry creates one attempt and audit                                                               0.95s
+  ✓ concurrent verification commits one terminal result history and audit                                        0.96s
+  ✓ concurrent draft creation commits one application and one creation log                                       0.78s
+  ✓ concurrent assignment inserts commit only one active assignment                                              0.72s
+  ✓ concurrent document uploads allocate distinct versions without overwriting files                             0.86s
+  ✓ concurrent submissions commit one snapshot check history and submission log                                  0.85s
+  ✓ concurrent claim routes commit one owner and one claim history log                                           0.92s
+
+   PASS  Tests\Feature\DomainConstraintsTest
+  ✓ all fourteen domain tables use innodb and restrict foreign keys                                              0.16s
+  ✓ one active application includes draft and revision and final allows new one                                  0.11s
+  ✓ status and finance cannot bypass markers or checks                                                           0.09s
+  ✓ profile identity and user are unique even without api validation                                             0.12s
+  ✓ document type seeding is idempotent and never overwrites a conflict                                          0.13s
+  ✓ snapshot version is unique and current pointer must belong to application                                    0.07s
+  ✓ only one active assignment globally even across snapshots                                                    0.05s
+  ✓ assignment cannot reference snapshot from another application                                                0.10s
+  ✓ assignment and verification discriminators cannot free unique markers with invalid values                    0.11s
+  ✓ processing succeeded and attempt numbers are unique per snapshot                                             0.14s
+  ✓ check state and score consistency cannot be bypassed                                                         0.05s
+  ✓ only one active model and contamination is numeric in range                                                  0.08s
+  ✓ terminal verification is unique and requires valid assignment and check snapshot                             0.08s
+  ✓ decision level is unique and rejected notes cannot be null                                                   0.09s
+  ✓ history cannot point to foreign snapshot or have null from status                                            0.08s
+  ✓ document versions and submission document types are unique and restrict deletion                             0.08s
+
+   PASS  Tests\Feature\DraftCleanupTest
+  ✓ committed delete leaves a visible persistent cleanup job and idempotent file cleanup                         0.14s
+  ✓ cleanup failure is not silently treated as success                                                           0.11s
+  ✓ cleanup cannot escape the private document prefix                                                            0.09s
+
+   PASS  Tests\Feature\InternalQueueTest
+  ✓ anonymous customers and admin cannot read or mutate reviewer routes                                          0.18s
+  ✓ three roles see only their queue and filters and summary cannot expand scope                                 0.81s
+  ✓ claim is pinned server owned and release preserves status and full assignment history                        0.56s
+  ✓ approvers cannot skip stage and stage is determined by server                                                0.20s
+  ✓ internal snapshots and documents require current role scope and immutable submission links                   0.15s
+  ✓ mutations recheck account and role and audit failure rolls back claim and release                            0.13s
+
+   PASS  Tests\Feature\PredictionJobTest
+  ✓ job requests pinned model outside database transaction and does not make an automatic decision               0.10s
+  ✓ connection timeout or failed service has one http attempt and safe failure                                   0.10s
+  ✓ expired or insufficient budget makes no http request and scheduler recovers lost jobs                        0.16s
+  ✓ response after deadline and duplicate or wrong identity cannot overwrite terminal state                      0.22s
+  ✓ obsolete snapshot and database execution lock prevent stale or duplicate http                                0.14s
+  ✓ real scheduler subprocess recovers an expired check on the testing database                                  0.83s
+
+   PASS  Tests\Feature\PredictionRetryCommitTest
+  ✓ dispatch failure after commit preserves accepted response and new attempt                                    0.25s
+  ✓ persisted retry job succeeds with fake http and old result cannot change new attempt                         0.15s
+
+   PASS  Tests\Feature\PredictionRetryTest
+  ✓ retry preserves snapshot prior check and task and pins inputs                                                0.30s
+  ✓ roles ownership scope version and forbidden client fields                                                    0.17s
+  ✓ success processing missing and wrong mode cannot retry                                                       0.13s
+  ✓ audit failure rolls back attempt and actor is rechecked                                                      0.12s
+
+   PASS  Tests\Feature\ReviewerBootstrapTest
+  ✓ local bootstrap creates three review roles with hidden password prompt and audit                             4.27s
+  ✓ bootstrap refuses production without prompting or writing                                                    0.07s
+
+   PASS  Tests\Feature\StubRegistrationTest
+  ✓ registration is idempotent and only activates when requested                                                 0.14s
+  ✓ registration never replaces another active model or overwrites changed code metadata                         0.07s
+  ✓ registration refuses non stub mode and production                                                            0.07s
+
+   PASS  Tests\Feature\SubmissionCommitTest
+  ✓ enqueue happens after commit and persists a database job visible to another connection                       0.28s
+  ✓ failed enqueue is compensated after commit without turning the accepted submission into a failure            0.21s
+
+   PASS  Tests\Feature\VerificationActionsTest
+  ✓ note keeps task and snapshot immutable and is private                                                        0.17s
+  ✓ revision requires reason and exposes only public reason                                                      0.16s
+  ✓ forward requires success and anomaly notes and ends task                                                     0.18s
+  ✓ scope owner version and server fields                                                                        0.23s
+  ✓ normal forward with linked checklist                                                                         0.14s
+  ✓ audit failure rolls back every effect                                                                        0.17s
+  ✓ service rechecks actor                                                                                       0.13s
+
+  Tests:    116 passed (1233 assertions)
+  Duration: 38.08s

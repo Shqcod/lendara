@@ -55,7 +55,7 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
-            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http'], true)) {
+            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http', 'approval_http'], true)) {
                 $a = (int) file_get_contents($directory.'/a.ready');
                 $b = (int) file_get_contents($directory.'/b.ready');
                 $until = microtime(true) + 8;
@@ -89,6 +89,27 @@ class DomainConcurrencyTest extends TestCase
                     $process->stop(1);
                 }
             }
+        }
+    }
+
+    public function test_concurrent_approval_at_each_level_commits_only_one_decision(): void
+    {
+        foreach ([1, 2] as $level) {
+            $actor = User::factory()->create(['role' => 'penyetuju_'.$level]);
+            $app = $this->loan(overrides: ['status' => 'pending_approval_'.$level]);
+            $id = $this->submission($app);
+            DB::table('loan_applications')->where('id', $app)->update(['current_submission_id' => $id]);
+            $this->assignment($app, $id, ['assigned_to' => $actor->id, 'stage' => 'approval_'.$level]);
+            $check = $this->check($id);
+            if ($level === 2) {
+                $prior = $this->assignment($app, $id, ['stage' => 'approval_1', 'ended_at' => now(), 'end_type' => 'completed']);
+                $this->decision($id, $prior, $check);
+            }
+            $results = $this->race('approval_http', $actor->id, $app, $id);
+            $this->assertSame(['created', 'out_of_scope'], array_column($results, 'result'));
+            $this->assertSame(1, DB::table('approval_decisions')->where('submission_id', $id)->where('level', $level)->count());
+            $this->assertSame(1, DB::table('application_status_histories')->where('application_id', $app)->count());
+            $this->assertSame(1, DB::table('activity_logs')->where('actor_id', $actor->id)->where('action', 'approval.approved')->count());
         }
     }
 

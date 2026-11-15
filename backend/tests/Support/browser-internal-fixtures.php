@@ -28,7 +28,7 @@ if (! $type || ! $model) {
     throw new RuntimeException('Canonical test fixtures not ready.');
 }
 $applications = [];
-foreach (['verification' => 'pending_verification', 'l1' => 'pending_approval_1', 'l2' => 'pending_approval_2'] as $key => $status) {
+foreach (array_merge(['verification' => 'pending_verification', 'l1' => 'pending_approval_1', 'l2' => 'pending_approval_2'], ($input['approval'] ?? false) ? ['rejection' => 'pending_approval_1'] : []) as $key => $status) {
     $customer = User::factory()->create(['name' => 'Nasabah Peninjauan Fiktif', 'email' => 'customer-'.$input['run'].'-'.$key.'@example.test']);
     $number = 'INT-'.Str::ulid();
     $id = DB::table('loan_applications')->insertGetId(['application_number' => $number, 'customer_id' => $customer->id, 'status' => $status, 'created_at' => now(), 'updated_at' => now()]);

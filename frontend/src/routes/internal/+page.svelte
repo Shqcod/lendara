@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ApprovalPanel from '#lib/ApprovalPanel.svelte';
 	import VerificationPanel from '#lib/VerificationPanel.svelte';
 	import { onMount } from 'svelte';
 	import { api, ApiError, csrf, currentUser, downloadDocument, type User } from '#lib/api.ts';
@@ -110,6 +111,17 @@
         } catch (error) { showError(error, true); }
         finally { busy = false; }
     }
+    async function approve(decision: string, notes: string) {
+        if (blocked || !own || !currentVersion || !snapshot || !['penyetuju_1', 'penyetuju_2'].includes(user?.role || '')) return;
+        busy = true; errors = {};
+        try {
+            if (!await sameAccount()) return;
+            await api(`/api/v1/internal/submissions/${snapshot.id}/approval-decisions`, { decision, notes: notes || null });
+            uncertain = true;
+            if (await load()) message = 'Keputusan persetujuan berhasil disimpan.';
+        } catch (error) { showError(error, true); }
+        finally { busy = false; }
+    }
 	async function verify(type: string, notes: string, checklist: Record<string, boolean>) {
 		if (blocked || !own || !currentVersion || !snapshot) return;
 		busy = true; errors = {};
@@ -166,8 +178,9 @@
 					<div class="pagination"><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page - 1}`)} disabled={busy || detail.assignments.meta.current_page <= 1}>Penugasan sebelumnya</button><span>Halaman {detail.assignments.meta.current_page}/{detail.assignments.meta.last_page}</span><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page + 1}`)} disabled={busy || detail.assignments.meta.current_page >= detail.assignments.meta.last_page}>Penugasan berikutnya</button></div>
 					<h3>Riwayat status</h3><ol>{#each detail.status_histories.data as history}<li>{statusLabels[history.from_status]} → {statusLabels[history.to_status]}<br />{timeWib(history.changed_at)}</li>{/each}</ol><div class="pagination"><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page - 1}`)} disabled={busy || detail.status_histories.meta.current_page <= 1}>Status sebelumnya</button><span>Halaman {detail.status_histories.meta.current_page}/{detail.status_histories.meta.last_page}</span><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page + 1}`)} disabled={busy || detail.status_histories.meta.current_page >= detail.status_histories.meta.last_page}>Status berikutnya</button></div>
 					{#each Object.entries(errors) as [field, messages]}<p class="field-error" role="alert">{field}: {messages[0]}</p>{/each}
-					{#key snapshot.id}<VerificationPanel {snapshot} disabled={blocked} locked={!own || !currentVersion || user?.role !== 'verifikator'} submit={verify} page={(value) => selectSnapshot(snapshot!.id, value)} />{/key}
-					<p class="muted">Keputusan persetujuan tersedia pada irisan berikutnya.</p>
+					{#key snapshot.id}<VerificationPanel {snapshot} readOnly={user?.role !== 'verifikator'} disabled={blocked} locked={!own || !currentVersion || user?.role !== 'verifikator'} submit={verify} page={(value) => selectSnapshot(snapshot!.id, value)} />{/key}
+					{#if user?.role === 'penyetuju_1' || user?.role === 'penyetuju_2'}{#key snapshot.id}<ApprovalPanel {snapshot} disabled={blocked || !own || !currentVersion} level={user.role === 'penyetuju_1' ? 1 : 2} submit={approve} />{/key}{/if}
+                    <h3>Riwayat keputusan versi ini</h3><ol>{#each snapshot.approval_decisions as decision}<li>Tingkat {decision.level}: {decision.decision === 'approved' ? 'Disetujui' : 'Ditolak'} · {timeWib(decision.decided_at)}<p>{decision.notes || 'Tanpa catatan tambahan'}</p></li>{/each}</ol>
 				</section>{/if}
 			{/if}
 		</div>

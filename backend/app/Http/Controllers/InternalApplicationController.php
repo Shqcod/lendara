@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Http\Requests\ApprovalRequest;
 use App\Http\Requests\AssignmentClaimRequest;
 use App\Http\Requests\AssignmentReleaseRequest;
 use App\Http\Requests\VerificationRequest;
 use App\Http\Resources\AssignmentResource;
 use App\Models\ApplicationSubmission;
 use App\Models\Assignment;
+use App\Services\ApprovalActions;
 use App\Services\InternalReadModel;
 use App\Services\PredictionRetries;
 use App\Services\ReviewAssignments;
@@ -105,6 +107,11 @@ class InternalApplicationController extends Controller
         abort_if(count($request->all()) !== 0, 422, 'Retry tidak menerima field dari klien.');
 
         return $this->json(['data' => $retries->retry($request->user()->id, (int) $submission), 'message' => 'Percobaan pemeriksaan baru diterima. Periksa data terbaru untuk hasilnya.'], 202);
+    }
+
+    public function approve(ApprovalRequest $request, string $submission, ApprovalActions $actions)
+    {
+        return $this->json(['data' => $actions->store($request->user()->id, (int) $submission, $request->validated()), 'message' => 'Keputusan persetujuan berhasil disimpan.'], 201);
     }
 
     public function verify(VerificationRequest $request, string $submission, VerificationActions $actions)

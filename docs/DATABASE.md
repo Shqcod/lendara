@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; persetujuan/admin dan retry manual masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; retry manual dan persetujuan tingkat 1/2 tersedia; admin masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -100,3 +100,7 @@ DomainConcurrencyTest verification_http memakai dua proses/koneksi, barrier dan 
 ## Transaksi retry manual
 
 PredictionRetries mengunci user → aplikasi → assignment aktif → riwayat check terbaru; memeriksa actor/peran, versi, kepemilikan, semua percobaan failed. Insert attempt berikutnya pada snapshot sama dengan model/input dipin dan deadline baru, serta activity_logs anomaly.retry_requested atomik. Unique processing/succeeded/attempt tetap berlaku. Snapshot, tautan dokumen, check terminal lama, status dan assignment tidak berubah. PredictionDispatch dipakai bersama pengiriman awal/retry untuk enqueue setelah commit dan kompensasi dispatch gagal. Tidak ada schema/migration/grant baru. Concurrency retry_http dua koneksi/kernel dengan lock wait aktual membuktikan 202/409 dan satu attempt baru/audit.
+
+## Transaksi keputusan persetujuan
+
+ApprovalActions mengunci user aktif/role penyetuju → aplikasi scope → assignment aktif → keputusan snapshot → succeeded check. Level dari role, pemilik/stage/versi diperiksa ulang. L2 memerlukan approved L1 pada snapshot sama. Insert keputusan append-only, status history, update status, penutupan tugas completed/ended_by dan audit atomik; rollback audit membatalkan seluruh efek. Unique(submission_id,level) tetap pengaman. Snapshot, dokumen dan hasil model tetap. Status final melepas marker aktif sehingga nasabah boleh membuat draf baru. Tidak ada schema/migration/grant baru. Dua koneksi/kernel/barrier/lock wait nyata pada masing-masing level membuktikan satu keputusan/history/audit dan request kedua keluar scope.
