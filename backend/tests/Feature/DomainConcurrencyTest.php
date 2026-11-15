@@ -55,7 +55,7 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
-            if ($mode === 'claim_http') {
+            if (in_array($mode, ['claim_http', 'verification_http'], true)) {
                 $a = (int) file_get_contents($directory.'/a.ready');
                 $b = (int) file_get_contents($directory.'/b.ready');
                 $until = microtime(true) + 8;
@@ -90,6 +90,21 @@ class DomainConcurrencyTest extends TestCase
                 }
             }
         }
+    }
+
+    public function test_concurrent_verification_commits_one_terminal_result_history_and_audit(): void
+    {
+        $actor = User::factory()->create(['role' => 'verifikator']);
+        $application = $this->loan(overrides: ['status' => 'pending_verification']);
+        $submission = $this->submission($application);
+        DB::table('loan_applications')->where('id', $application)->update(['current_submission_id' => $submission]);
+        $assignment = $this->assignment($application, $submission, ['assigned_to' => $actor->id]);
+        $results = $this->race('verification_http', $actor->id, $application, $submission);
+        $this->assertSame(['created', 'out_of_scope'], array_column($results, 'result'));
+        $this->assertSame(1, DB::table('verification_results')->where('submission_id', $submission)->count());
+        $this->assertSame(1, DB::table('application_status_histories')->where('application_id', $application)->count());
+        $this->assertSame(1, DB::table('activity_logs')->where('actor_id', $actor->id)->where('action', 'verification.request_revision')->count());
+        $this->assertDatabaseHas('assignments', ['id' => $assignment, 'end_type' => 'completed']);
     }
 
     public function test_concurrent_draft_creation_commits_one_application_and_one_creation_log(): void

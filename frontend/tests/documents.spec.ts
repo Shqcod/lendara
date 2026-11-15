@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 
-test('dokumen dan pengiriman: versi, batas unggah, tinjau, snapshot dan pemulihan respons tanpa replay', async ({ page }) => {
-	test.setTimeout(180000);
+test('dokumen dan pengiriman: versi, batas unggah, tinjau, snapshot dan pemulihan respons tanpa replay', async ({ page, browser }) => {
+	test.setTimeout(300000);
 	const password = randomUUID();
 	await page.goto('/');
 	await expect(page.getByText('Belum masuk. Silakan gunakan akun Anda.')).toBeVisible();
@@ -180,4 +181,50 @@ test('dokumen dan pengiriman: versi, batas unggah, tinjau, snapshot dan pemuliha
 	await page.screenshot({ path: '../docs/validation/submission-mobile-320.png', fullPage: true });
 	await page.setViewportSize({ width: 1366, height: 900 });
 	await page.screenshot({ path: '../docs/validation/submission-desktop.png', fullPage: true });
+	// Continue the real customer submission through reviewer revision and customer resend.
+	const fixture = JSON.parse(execFileSync('php', ['tests/Support/browser-internal-fixtures.php'], {
+		cwd: '../backend', env: { ...process.env, APP_ENV: 'testing' }, input: JSON.stringify({ run: randomUUID(), password }), encoding: 'utf8', timeout: 30000
+	}));
+	const context = await browser.newContext(); const reviewer = await context.newPage();
+	try {
+		await reviewer.goto('/');
+		await expect(reviewer.getByText('Belum masuk. Silakan gunakan akun Anda.', { exact: true })).toBeVisible();
+		await reviewer.getByLabel('Email', { exact: true }).fill(fixture.users.one.email);
+		await reviewer.getByLabel('Kata sandi', { exact: true }).fill(password);
+		await reviewer.getByRole('button', { name: 'Masuk', exact: true }).click();
+		await reviewer.getByRole('link', { name: 'Buka antrean internal' }).click();
+		await expect(reviewer.getByRole('button', { name: 'Cari pengajuan', exact: true })).toBeEnabled();
+		await reviewer.getByLabel('Nomor pengajuan', { exact: true }).fill(application.application_number);
+		await reviewer.getByRole('button', { name: 'Cari pengajuan', exact: true }).click();
+		await reviewer.getByRole('button', { name: `Ambil ${application.application_number}`, exact: true }).click();
+		await expect(reviewer.getByRole('button', { name: 'Minta revisi', exact: true })).toBeEnabled();
+		await reviewer.getByLabel('Catatan / alasan revisi', { exact: true }).fill('Catatan internal sebelum revisi');
+		await reviewer.getByRole('button', { name: 'Simpan catatan', exact: true }).click();
+		await reviewer.getByRole('button', { name: 'Konfirmasi tindakan', exact: true }).click();
+		await expect(reviewer.getByRole('listitem').getByText('Catatan internal sebelum revisi', { exact: true })).toBeVisible();
+		await reviewer.getByLabel('Catatan / alasan revisi', { exact: true }).fill('Perbarui tujuan pinjaman fiktif');
+		await reviewer.getByRole('button', { name: 'Minta revisi', exact: true }).click();
+		await reviewer.getByRole('button', { name: 'Batal', exact: true }).click();
+		await expect(reviewer.getByRole('button', { name: 'Lepas tugas', exact: true })).toBeEnabled();
+		await reviewer.getByRole('button', { name: 'Minta revisi', exact: true }).click();
+		let revisions = 0;
+		await reviewer.route('**/api/v1/internal/submissions/*/verification-results', async (route) => {
+			revisions++; const response = await route.fetch(); expect(response.status()).toBe(201); await route.abort();
+		}, { times: 1 });
+		await reviewer.getByRole('button', { name: 'Konfirmasi tindakan', exact: true }).click();
+		await expect(reviewer.getByRole('alert')).toContainText('Periksa sesi sebelum mengirim ulang');
+		await expect(reviewer.getByRole('button', { name: 'Minta revisi', exact: true })).toBeDisabled();
+		await reviewer.getByRole('button', { name: 'Periksa data terbaru', exact: true }).click();
+		await expect(reviewer.getByRole('heading', { name: application.application_number, exact: true })).toHaveCount(0);
+		expect(revisions).toBe(1);
+		await page.reload();
+		await expect(page.getByText('Alasan revisi: Perbarui tujuan pinjaman fiktif', { exact: true })).toBeVisible();
+		await expect(page.getByText('Catatan internal sebelum revisi', { exact: true })).toHaveCount(0);
+		await page.getByRole('button', { name: 'Tinjau kirim ulang', exact: true }).click();
+		await page.getByRole('checkbox').check();
+		await page.getByRole('button', { name: 'Ya, kirim pengajuan', exact: true }).click();
+		await expect(page.getByRole('heading', { name: 'Pengiriman versi 2', exact: true })).toBeVisible();
+		await page.screenshot({ path: '../docs/validation/verification-resend-desktop.png', fullPage: true });
+	} finally { await context.close(); }
+
 });

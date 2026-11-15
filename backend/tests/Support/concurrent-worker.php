@@ -57,6 +57,17 @@ try {
             throw new RuntimeException('Unexpected claim status '.$httpStatus);
         }
         $claimResult = $httpStatus === 201 ? 'created' : json_decode($response->getContent(), true)['code'];
+    } elseif ($mode === 'verification_http') {
+        Auth::guard('web')->setUser(User::findOrFail($actor));
+        $request = Request::create('/api/v1/internal/submissions/'.$submission.'/verification-results', 'POST', [], [], [],
+            ['HTTP_ORIGIN' => 'http://localhost:5173', 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
+            json_encode(['result_type' => 'request_revision', 'notes' => 'Revisi fiktif bersamaan', 'document_checklist' => []]));
+        $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
+        $httpStatus = $response->getStatusCode();
+        if (! in_array($httpStatus, [201, 404], true)) {
+            throw new RuntimeException('Unexpected verification status '.$httpStatus);
+        }
+        $claimResult = $httpStatus === 201 ? 'created' : 'out_of_scope';
     } elseif ($mode === 'submission') {
         app(CustomerSubmissions::class)->submit((int) $actor, (int) $application, null);
     } elseif ($mode === 'document') {

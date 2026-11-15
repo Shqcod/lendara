@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikasi/persetujuan, retry manual, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; persetujuan, retry manual, dan admin belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -63,7 +63,7 @@ Body pengajuan: loan_amount,tenor_months,purpose,monthly_income,monthly_expenses
 - Unduhan melalui policy kepemilikan/scope internal, attachment, MIME server, Cache-Control no-store/private, dan X-Content-Type-Options nosniff. File hilang 404. Admin tetap 403. Reviewer hanya dapat mengunduh versi yang ditautkan ke snapshot pengajuan dalam tahapnya; versi kerja yang belum ditautkan dan pengajuan di luar scope 404.
 - PHP bawaan Laragon teramati mengizinkan 2G; helper start-backend membatasi proses lokal menjadi upload_max_filesize=5M dan post_max_size=8M. Post melewati batas server menghasilkan 413 PAYLOAD_TOO_LARGE; file melewati batas upload PHP/validasi menghasilkan 422 pada field file. UI menangani keduanya tanpa mengulang unggahan otomatis.
 
-Bagian internal memisahkan antrean/baca/claim/release yang tersedia dari aksi verifikasi/persetujuan/retry yang masih target. Keberadaan tabel tidak membuktikan seluruh workflow selesai.
+Bagian internal mencakup antrean/baca/claim/release dan aksi verifikator; persetujuan dan retry manual masih target. Keberadaan tabel tidak membuktikan seluruh workflow selesai.
 
 Upload satu file/request; PDF/JPG/JPEG/PNG max 5 MB, validasi MIME/isi + ekstensi. Nama storage dibuat server. Config PHP/webserver diselaraskan, 413 dinormalisasi jika memungkinkan. File versi lama dipertahankan. Download nasabah hanya miliknya; internal hanya verifikator/penyetuju pada tahap yang diizinkan. Admin tidak otomatis mendapat akses. Proteksi berlaku juga untuk dokumen lama yang terkait versi pengajuan tersebut.
 
@@ -110,7 +110,15 @@ Untuk antrean verifikator status pending_verification; penyetuju1 pending_approv
 - POST release: reason wajib teks tidak kosong maksimal 16000 karakter. Hanya pemilik, versi/stage masih terkini dan ended_at null; tugas lama/berakhir 409 ASSIGNMENT_NOT_ACTIVE, bukan pemilik 403. Baris lama ditutup released dengan ended_by/reason, tidak ditimpa assigned_to; claim berikutnya membuat baris baru. Respons 200 assignment tertutup. Claim/release menulis activity_logs atomik, sementara riwayat penugasan berada pada assignments; **tidak** membuat transisi status yang sama karena status bisnis tetap.
 - Hasil internal pada snapshot memuat attempt/status/score/is_anomaly/model_version_code, waktu/deadline dan failure_reason teknis yang tersimpan. Tidak ada input_features, artifact_path/hash, parameters, atau kunci ML. Hasil tidak memberi keputusan pinjaman otomatis. Seluruh resource nasabah tetap terpisah dan tidak memperoleh hasil internal ini.
 
-Endpoint aksi verification-results, approval-decisions, dan retry/read-attempt terpisah pada tabel tetap target tahap berikutnya; pembacaan hasil saat ini tersedia pada snapshot internal.
+### Irisan aksi verifikator
+
+POST verification-results tersedia untuk verifikator aktif pemilik tugas verifikasi pada snapshot terkini. Versi lama 409 SUBMISSION_VERSION_CONFLICT; bukan pemilik/tanpa tugas 403; di luar tahap 404. Actor/assignment/check dipilih server, field verifier_id/assignment_id/anomaly_check_id/status dari klien dilarang.
+
+Body: result_type note/request_revision/forward, notes nullable maksimal 16000 karakter (trim), document_checklist wajib berupa map ID jenis dokumen snapshot ke boolean JSON (boleh kosong, maksimum 100 entri sebagai batas payload). Checklist mendokumentasikan peninjauan, tidak menambah syarat kelayakan/kelengkapan forward. Jenis di luar snapshot ditolak 422. Revision wajib alasan publik; forward wajib succeeded dan notes jika is_anomaly. Anomali tidak menolak pengajuan otomatis.
+
+201 data berisi id,submission_id,result_type,application_status. Note menambah konten/audit tanpa menutup tugas atau menambah status history. Revision/forward menutup tugas completed dan mengubah status ke revision_required/pending_approval_1 bersama konten/history/audit dalam satu transaksi. Scope verifikator berhenti setelah transisi; baca ulang antrean menghapus detail lama. Tidak replay mutasi setelah respons tidak pasti.
+
+Snapshot internal menambah verification_results berpaginasi 10 item (verification_page positif) termasuk id,verifier_id,result_type,notes,document_checklist,anomaly_check_id,created_at UTC. Resource nasabah tidak berubah: hanya alasan request_revision publik pada status-histories. Endpoint approval-decisions dan retry/read-attempt terpisah masih target berikutnya.
 
 ## Kode domain
 

@@ -41,7 +41,7 @@ Dokumen ini adalah acuan proyek; jangan bergantung pada riwayat chat. Bila kode 
 ## Cara mengerjakan
 
 - Kerjakan irisan kecil: backend + frontend + pengujian yang relevan. Penuhi kriteria tahap, lalu lanjut.
-- Ikuti tahap aktif di PROGRESS. Setup/auth, schema 14 tabel, irisan nasabah, dasar job prediksi/deadline, serta antrean/claim/release dan scope internal sudah terbukti. Tahap berikutnya verifikator note/revisi/forward dan retry manual, lalu persetujuan/admin per irisan. Jangan mengaku semua fitur atau model asli selesai karena stub lulus.
+- Ikuti tahap aktif di PROGRESS. Setup/auth, schema 14 tabel, irisan nasabah, dasar job prediksi/deadline, serta antrean/claim/release dan scope internal sudah terbukti. Aksi verifikator note/revisi/forward sudah tersedia; tahap berikutnya retry manual, lalu persetujuan/admin per irisan. Jangan mengaku semua fitur atau model asli selesai karena stub lulus.
 - Pelatihan model dimulai sebagai jalur tersendiri setelah schema dan generator dikunci; tidak perlu menunggu UI selesai.
 - Tulis feature test otorisasi, transisi, snapshot, dan constraint pada MySQL nyata. SQLite tidak cukup untuk membuktikan constraint MySQL.
 - Setelah perubahan, jalankan pemeriksaan yang tersedia; laporkan yang lulus, gagal, dan belum bisa dijalankan. Jangan mengarang hasil.

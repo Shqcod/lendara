@@ -1,4 +1,5 @@
 <script lang="ts">
+	import VerificationPanel from '#lib/VerificationPanel.svelte';
 	import { onMount } from 'svelte';
 	import { api, ApiError, csrf, currentUser, downloadDocument, type User } from '#lib/api.ts';
 	import { roleLabels, stageLabels, reviewerRoles, type ReviewRow, type ReviewDetail, type ReviewSnapshot, type Summary } from '#lib/internal.ts';
@@ -89,11 +90,22 @@
 		} catch (error) { showError(error, true); if (!(error instanceof ApiError && error.status === 422)) releaseDialog?.close(); }
 		finally { busy = false; }
 	}
-	async function selectSnapshot(id: number) {
+	async function selectSnapshot(id: number, verificationPage = 1) {
 		if (blocked || !detail) return;
 		busy = true;
-		try { if (await sameAccount()) snapshot = (await api<{ data: ReviewSnapshot }>(`/api/v1/internal/applications/${detail.id}/submissions/${id}`)).data; }
+		try { if (await sameAccount()) snapshot = (await api<{ data: ReviewSnapshot }>(`/api/v1/internal/applications/${detail.id}/submissions/${id}?verification_page=${verificationPage}`)).data; }
 		catch (error) { showError(error); }
+		finally { busy = false; }
+	}
+	async function verify(type: string, notes: string, checklist: Record<string, boolean>) {
+		if (blocked || !own || !currentVersion || !snapshot) return;
+		busy = true; errors = {};
+		try {
+			if (!await sameAccount()) return;
+			await api(`/api/v1/internal/submissions/${snapshot.id}/verification-results`, { result_type: type, notes: notes || null, document_checklist: checklist });
+			uncertain = true;
+			if (await load()) message = 'Hasil verifikasi berhasil disimpan.';
+		} catch (error) { showError(error, true); }
 		finally { busy = false; }
 	}
 	async function download(file: DocumentVersion) {
@@ -139,7 +151,9 @@
 					<h3>Riwayat penugasan</h3><ol>{#each detail.assignments.data as assignment}<li><strong>{assignment.assignee.name}</strong> · {stageLabels[assignment.stage] || assignment.stage}<br />Diambil {timeWib(assignment.claimed_at)}{#if assignment.ended_at}<br />{assignment.end_type === 'released' ? 'Dilepas' : 'Selesai'} {timeWib(assignment.ended_at)}{#if assignment.end_reason}<p>Alasan: {assignment.end_reason}</p>{/if}{:else}<br />Aktif{/if}</li>{/each}</ol>
 					<div class="pagination"><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page - 1}`)} disabled={busy || detail.assignments.meta.current_page <= 1}>Penugasan sebelumnya</button><span>Halaman {detail.assignments.meta.current_page}/{detail.assignments.meta.last_page}</span><button onclick={() => load(detail!.id, `?assignment_page=${detail!.assignments.meta.current_page + 1}`)} disabled={busy || detail.assignments.meta.current_page >= detail.assignments.meta.last_page}>Penugasan berikutnya</button></div>
 					<h3>Riwayat status</h3><ol>{#each detail.status_histories.data as history}<li>{statusLabels[history.from_status]} → {statusLabels[history.to_status]}<br />{timeWib(history.changed_at)}</li>{/each}</ol><div class="pagination"><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page - 1}`)} disabled={busy || detail.status_histories.meta.current_page <= 1}>Status sebelumnya</button><span>Halaman {detail.status_histories.meta.current_page}/{detail.status_histories.meta.last_page}</span><button onclick={() => load(detail!.id, `?history_page=${detail!.status_histories.meta.current_page + 1}`)} disabled={busy || detail.status_histories.meta.current_page >= detail.status_histories.meta.last_page}>Status berikutnya</button></div>
-					<p class="muted">Aksi catatan verifikasi, revisi, penerusan, retry dan persetujuan akan tersedia pada irisan fitur berikutnya.</p>
+					{#each Object.entries(errors) as [field, messages]}<p class="field-error" role="alert">{field}: {messages[0]}</p>{/each}
+					{#key snapshot.id}<VerificationPanel {snapshot} disabled={blocked} locked={!own || !currentVersion || user?.role !== 'verifikator'} submit={verify} page={(value) => selectSnapshot(snapshot!.id, value)} />{/key}
+					<p class="muted">Retry manual dan keputusan persetujuan tersedia pada irisan berikutnya.</p>
 				</section>{/if}
 			{/if}
 		</div>

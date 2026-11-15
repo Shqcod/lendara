@@ -103,6 +103,13 @@ test('antrean internal: dua peninjau, claim eksklusif, arsip privat, release tan
 				await expect(page.getByRole('button', { name: 'Lepas tugas', exact: true })).toBeEnabled();
 			} finally { await context.close(); }
 		}
+		await two.getByRole('button', { name: 'Teruskan ke penyetuju tingkat 1', exact: true }).click();
+		await two.getByRole('button', { name: 'Konfirmasi tindakan', exact: true }).click();
+		await expect(two.getByRole('alert').first()).toContainText('Catatan peninjauan anomali wajib');
+		await two.getByLabel('Catatan / alasan revisi', { exact: true }).fill('Anomali fiktif sudah ditinjau manusia');
+		await two.getByRole('button', { name: 'Teruskan ke penyetuju tingkat 1', exact: true }).click();
+		await two.getByRole('button', { name: 'Konfirmasi tindakan', exact: true }).click();
+		await expect(two.getByRole('heading', { name: loan.number, exact: true })).toHaveCount(0);
 		const adminContext = await browser.newContext(); const admin = await adminContext.newPage();
 		try { await login(admin, 'admin'); await admin.goto('/internal'); await expect(admin.getByRole('heading', { name: 'Halaman khusus peninjau', exact: true })).toBeVisible(); }
 		finally { await adminContext.close(); }

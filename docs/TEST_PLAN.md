@@ -66,3 +66,7 @@ CustomerSubmissionsTest/SubmissionCommitTest membuktikan data tersimpan/konfirma
 
 Per-field validation, pending state, kegagalan jaringan, 320px/mobile + desktop, keyboard; alur revision/resend; L1/L2 setuju/tolak; reset data melalui prosedur aman terpisah. Jalankan manual dari README pada lingkungan demo, catat hasil. Runtime Windows tidak membuktikan worker POSIX timeout; uji Linux/WSL saat dibutuhkan.
 
+
+## Irisan aksi verifikator
+
+VerificationActionsTest mencakup note tanpa transisi, immutable snapshot, privasi nasabah, alasan revisi publik, forward succeeded/failed/anomali, kepemilikan/role/versi, checklist snapshot/boolean, field server terlarang, akun diperiksa ulang dan rollback audit. DomainConcurrencyTest menambah revisi bersamaan melalui HTTP kernel pada dua koneksi MySQL dengan lock wait aktual: satu hasil/history/audit. Chrome internal.spec.ts menambah forward anomali dengan notes wajib; documents.spec.ts menambah note privat, cancel/revisi dengan respons terputus tanpa replay, alasan publik dan kirim ulang nasabah versi 2 melalui API/UI nyata. Hasil eksekusi mengikuti PROGRESS.

@@ -45,6 +45,15 @@ class InternalReadModel
                 'started_at' => Carbon::parse($check->started_at)->utc()->toIso8601String(), 'deadline_at' => Carbon::parse($check->deadline_at)->utc()->toIso8601String(),
                 'finished_at' => $check->finished_at ? Carbon::parse($check->finished_at)->utc()->toIso8601String() : null])->all();
 
+        $page = validator(request()->all(), ['verification_page' => ['sometimes', 'integer', 'min:1']])->validate();
+        $results = DB::table('verification_results')->where('submission_id', $id)->orderByDesc('id')->paginate(10, ['id', 'verifier_id', 'result_type', 'notes', 'document_checklist', 'anomaly_check_id', 'created_at'], 'verification_page', $page['verification_page'] ?? 1);
+        $data['verification_results'] = $this->page($results, $results->getCollection()->map(function ($result) {
+            $result->document_checklist = json_decode($result->document_checklist);
+            $result->created_at = Carbon::parse($result->created_at)->utc()->toIso8601String();
+
+            return $result;
+        }));
+
         return $data;
     }
 

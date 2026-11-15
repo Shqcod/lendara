@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignmentClaimRequest;
 use App\Http\Requests\AssignmentReleaseRequest;
+use App\Http\Requests\VerificationRequest;
 use App\Http\Resources\AssignmentResource;
 use App\Models\ApplicationSubmission;
 use App\Models\Assignment;
 use App\Services\InternalReadModel;
 use App\Services\ReviewAssignments;
 use App\Services\ReviewScope;
+use App\Services\VerificationActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +85,12 @@ class InternalApplicationController extends Controller
         $scope->applications($request->user())->whereKey($application)->firstOrFail();
 
         return $this->json(['data' => $read->snapshot((int) $application, (int) $submission)]);
+    }
+
+    public function verify(VerificationRequest $request, string $submission, VerificationActions $actions)
+    {
+        return $this->json(['data' => $actions->store($request->user()->id, (int) $submission, $request->validated()),
+            'message' => 'Hasil verifikasi berhasil disimpan.'], 201);
     }
 
     public function claim(AssignmentClaimRequest $request, string $application, ReviewAssignments $assignments)

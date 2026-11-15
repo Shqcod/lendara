@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikasi/persetujuan/admin masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; persetujuan/admin dan retry manual masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -90,3 +90,9 @@ Scope internal menggunakan status tahap peran saat ini dan current_submission_id
 
 sessions, jobs, failed_jobs, job_batches bila dipakai, password_reset_tokens, cache/cache_locks dan personal_access_tokens bila benar-benar diperlukan tidak dihitung dalam 14 domain tables/ERD. Cookie SPA tidak membutuhkan penerbitan bearer token. Sesuaikan migration default users dengan schema domain; jangan membuat users kedua.
 
+
+## Transaksi aksi verifikator
+
+VerificationActions mengunci user aktif berperan verifikator → aplikasi dalam scope → assignment aktif → succeeded check. Snapshot dari URL harus sama dengan pointer terkini, tugas milik aktor dan stage verification. Checklist hanya merujuk jenis pada submission_documents. Konten append-only, referensi check dipilih server; snapshot/tautan dokumen tidak diubah. Note menyimpan hasil/audit saja; request_revision/forward menyimpan hasil, status history, status aplikasi dan penutupan tugas completed/ended_by bersama audit atomik. Unique terminal_submission_id tetap pengaman SQL. Pengujian audit gagal membatalkan semua efek.
+
+DomainConcurrencyTest verification_http memakai dua proses/koneksi, barrier dan observasi lock wait MySQL sebelum commit; satu terminal result/history/audit commit, request kedua 404 setelah tahap berubah. Ini terpisah dari bukti cookie browser. Tidak ada schema/migration/grant baru.
