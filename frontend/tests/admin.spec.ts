@@ -40,10 +40,10 @@ test('admin: buat akun tanpa replay, login akun baru, filter dan log aman, akses
     await page.getByRole('button', { name: 'Cari log', exact: true }).click();
     await expect(page.getByRole('cell', { name: 'internal_user.created', exact: true }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cari log', exact: true })).toBeEnabled();
-    await page.screenshot({ path: '../docs/validation/admin-accounts-desktop.png', fullPage: true });
+    await page.screenshot({ path: `../docs/validation/${process.env.RUNTIME_GRANTS_TEST==='1'?'runtime-':''}admin-accounts-desktop.png`, fullPage: true });
     await page.setViewportSize({ width: 320, height: 780 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: '../docs/validation/admin-accounts-mobile-320.png', fullPage: true });
+    await page.screenshot({ path: `../docs/validation/${process.env.RUNTIME_GRANTS_TEST==='1'?'runtime-':''}admin-accounts-mobile-320.png`, fullPage: true });
     const context = await browser.newContext(); const reviewer = await context.newPage();
     try {
         await reviewer.goto('/'); await expect(reviewer.getByText('Belum masuk. Silakan gunakan akun Anda.', { exact: true })).toBeVisible();

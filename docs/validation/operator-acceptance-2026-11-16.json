@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-16",
+  "environment": "local_windows",
+  "database": "kkp_pinjaman",
+  "primary_operator_scenario_complete": true,
+  "database_status_verified": "approved",
+  "same_submission_id": true,
+  "snapshot_count": 1,
+  "snapshot_document_links": 3,
+  "check_attempt": 1,
+  "check_status": "succeeded",
+  "pinned_model": "if-v1-b-seed17",
+  "forward_records": 1,
+  "forward_note_present": true,
+  "approval_decisions": [
+    {
+      "level": 1,
+      "decision": "approved"
+    },
+    {
+      "level": 2,
+      "decision": "approved"
+    }
+  ],
+  "status_sequence": [
+    "draft",
+    "pending_verification",
+    "pending_approval_1",
+    "pending_approval_2",
+    "approved"
+  ],
+  "active_assignments": 0,
+  "queued_jobs": 0,
+  "failed_jobs": 0,
+  "private_documents_checked": 3,
+  "private_documents_verified": 3,
+  "private_document_mismatches": 0,
+  "five_active_roles_verified": true,
+  "five_owned_services_running": true,
+  "model_preflight_passed": true,
+  "scheduler_heartbeat_recent": true,
+  "customer_final_status_confirmed_by": "user_report",
+  "agent_observed_operator_browser": false,
+  "agent_database_checks_read_only": true,
+  "operator_credentials_or_personal_identity_read": false,
+  "business_decisions_performed_by_agent": false,
+  "services_left_running": true,
+  "all_manual_branches_tested": false,
+  "formal_company_acceptance_complete": false
+}

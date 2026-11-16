@@ -30,7 +30,8 @@ class ApprovalActions
                 throw new DomainError('ASSIGNMENT_NOT_ACTIVE', 'Tugas tidak aktif pada versi dan tahap ini.');
             }
             $level = $user->role === Role::ApproverOne ? 1 : 2;
-            $previous = DB::table('approval_decisions')->where('submission_id', $id)->orderBy('level')->lockForUpdate()->get();
+            // The application row already serializes decisions; history is never updated.
+            $previous = DB::table('approval_decisions')->where('submission_id', $id)->orderBy('level')->sharedLock()->get();
             if ($previous->contains('level', $level) || ($level === 2 && ! $previous->contains(fn ($d) => $d->level === 1 && $d->decision === 'approved'))) {
                 throw new DomainError('INVALID_STATUS_TRANSITION', 'Urutan persetujuan tidak valid atau keputusan sudah dibuat.');
             }

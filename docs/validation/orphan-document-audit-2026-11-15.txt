@@ -1,0 +1,14 @@
+Lendara - read-only orphan document audit, 2026-11-15
+Database: MySQL kkp_pinjaman_test; filesystem: fake local disk only.
+php artisan test --filter=OrphanDocumentAuditTest --no-ansi
+3 passed / 18 assertions / 2.12s / exit 0.
+php artisan test --no-ansi
+144 passed / 1503 assertions / 93.27s.
+php vendor/bin/pint --test
+passed / exit 0.
+git diff --check: passed.
+No deletion, cleanup enqueue, environment edits or development upload scan.
+Referenced versions, old unreferenced files, recent and boundary files retained.
+Invalid grace rejected; DB failure yields no successful/partial orphan report.
+Crash interruption, uncommitted cross-connection references and destructive
+reconciliation remain unproven. This audit is not permission to delete files.

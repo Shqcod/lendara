@@ -1,0 +1,30 @@
+{
+  "database_guard": "PASS MySQL8.0.30 / kkp_pinjaman_test",
+  "development_database_changed": false,
+  "env_changed": false,
+  "final_target": {
+    "assertions": 18,
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 4,
+    "seconds": 2.11
+  },
+  "full_suite": {
+    "assertions": 1467,
+    "exit_code": 0,
+    "passed": 139,
+    "seconds": 85.9
+  },
+  "holdout_reopened": false,
+  "initial_target": {
+    "assertions": 15,
+    "cause": "cumulative HTTP fake harness; reset factory",
+    "failed": 1,
+    "passed": 3,
+    "seconds": 4.72
+  },
+  "live_handover_performed": false,
+  "new_handover_concurrency_observed": false,
+  "pint": "passed",
+  "readiness": "HTTP fake in MySQL feature test"
+}

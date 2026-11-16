@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-15",
+  "database": "kkp_pinjaman_test",
+  "mysql": "8.0.30",
+  "mode": "model",
+  "version": "if-v1-b-seed17",
+  "restricted_database_account": true,
+  "mysql_roles": "NONE",
+  "playwright": {
+    "startTime": "2026-11-15T10:26:27.771Z",
+    "duration": 521528.386,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "title": "admin nonaktif dan aktif kembali mencabut sesi serta melepas tugas; ubah peran memerlukan login baru",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 120047
+        }
+      ]
+    },
+    {
+      "title": "admin: buat akun tanpa replay, login akun baru, filter dan log aman, akses reviewer ditolak",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 48163
+        }
+      ]
+    },
+    {
+      "title": "cookie SPA: CSRF, daftar, masuk, muat ulang, keluar, dan akses anonim",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 26869
+        }
+      ]
+    },
+    {
+      "title": "kegagalan jaringan tidak mengulang mutasi secara otomatis",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 7749
+        }
+      ]
+    },
+    {
+      "title": "model asli: nasabah kirim, gagal koneksi, retry, revisi/kirim ulang dan persetujuan L1/L2",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "duration_ms": 302411
+        }
+      ]
+    }
+  ],
+  "browser_exit_code": 0,
+  "initial_runner_exit_code": 1,
+  "initial_runner_issue": "Windows CRLF cleanup acknowledgement; account was removed, verified independently",
+  "corrected_account_lifecycle_smoke_exit_code": 0,
+  "temporary_account_inventory_after_initial_run": [],
+  "scheduler": {
+    "database_heartbeat": true,
+    "expiry_command": true,
+    "expired_fixture_check": 1263,
+    "snapshot_and_business_status_preserved": true
+  },
+  "test_active_model_restored": true,
+  "development_database_changed": false,
+  "environment_files_changed": false,
+  "limitations": [
+    "Selected Chrome scenarios, not every PHPUnit branch under restricted credentials",
+    "Admin fixtures contain synthetic stub results, model-flow uses real model workers",
+    "No POSIX termination/deployment HTTPS proof"
+  ],
+  "temporary_account_inventory_after_corrected_smoke": []
+}

@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-16",
+  "mysql_3306_listening": true,
+  "runtime_identity_verified": true,
+  "immutable_operations_denied": true,
+  "development_accounts_ready": false,
+  "active_role_present": {
+    "nasabah": false,
+    "verifikator": false,
+    "penyetuju_1": false,
+    "penyetuju_2": false,
+    "admin": false
+  },
+  "restore_private_files_checked": 3,
+  "restore_private_files_verified": 3,
+  "restore_private_mismatches": 0,
+  "local_model_ready": true,
+  "model": "if-v1-b-seed17",
+  "source": "model",
+  "preflight_read_only": true,
+  "owned_model_process_stopped": true,
+  "environment_files_changed": false,
+  "operator_accounts_created_by_agent": false,
+  "operator_acceptance_complete": false
+}

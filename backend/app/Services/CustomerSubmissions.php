@@ -30,7 +30,7 @@ class CustomerSubmissions
                 throw new DomainError('INVALID_STATUS_TRANSITION', 'Pengajuan hanya dapat dikirim saat draf atau diminta revisi.');
             }
             $profile = CustomerProfile::where('user_id', $actor)->lockForUpdate()->first();
-            $types = DB::table('document_types')->where('is_active', true)->orderBy('id')->lockForUpdate()->get();
+            $types = DB::table('document_types')->where('is_active', true)->orderBy('id')->sharedLock()->get();
             $documents = DocumentVersion::where('application_id', $id)->whereIn('document_type_id', $types->pluck('id'))
                 ->orderByDesc('version_number')->orderBy('id')->lockForUpdate()->get()->unique('document_type_id')->keyBy('document_type_id');
             $snapshot = app(SubmissionData::class)->snapshot($user, $profile, $application, $types, $documents);
@@ -38,7 +38,8 @@ class CustomerSubmissions
             if (! $model || ! $this->modelAllowed($model)) {
                 throw new DomainError('SERVICE_NOT_READY', 'Pengajuan belum dapat dikirim. Hubungi pengelola lalu coba lagi nanti.', 503);
             }
-            $latest = ApplicationSubmission::where('application_id', $id)->orderByDesc('version_number')->lockForUpdate()->first();
+            // The application row serializes version allocation; snapshots remain SELECT/INSERT-only.
+            $latest = ApplicationSubmission::where('application_id', $id)->orderByDesc('version_number')->sharedLock()->first();
             $submission = new ApplicationSubmission($application->only(SubmissionData::FINANCE) + [
                 'application_id' => $id, 'version_number' => ($latest?->version_number ?? 0) + 1,
                 'customer_snapshot' => $snapshot, 'submitted_by' => $actor, 'submitted_at' => now(),

@@ -1,0 +1,23 @@
+Lendara - cleanup enqueue interruption - 2026-11-15
+Database MySQL kkp_pinjaman_test; fictional UUID disks and owned child processes.
+Real CustomerDocuments compensation and CustomerWorkspace.deleteDraft services.
+Separate connection IDs and transaction level checked at each barrier.
+
+compensation-before: no job; file retained as orphan after interrupted enqueue.
+compensation-after: autocommitted job survives caller crash; owned worker cleans fixture.
+draft-before: uncommitted job invisible; caller crash rolls back, draft/metadata/file retained.
+draft-after: committed deletion and durable job survive caller crash; owned worker cleans fixture.
+Parent reacquires application lock after interruption; no outstanding writer transaction.
+Only exact owned job payload routed to UUID queue; real database worker consumes it
+with the same isolated disk. No user files or unrelated queue jobs processed.
+
+php artisan test --filter=CleanupCrashTest --no-ansi
+1 passed / 44 assertions / 7.18s / exit 0.
+php artisan test --filter="CleanupCrashTest|UploadCrashAuditTest|OrphanDocumentAuditTest|DraftCleanupTest" --no-ansi
+8 passed / 131 assertions / 19.04s / exit 0.
+php vendor/bin/pint --test: passed.
+git diff --check: passed.
+
+No runtime/environment/model changes. Full backend/browser/frontend/ML not rerun.
+Unproven: multi-file deletion/worker acknowledgment crash, network COMMIT acknowledgment,
+POSIX timeout and destructive orphan reconciliation. Audit remains read-only.

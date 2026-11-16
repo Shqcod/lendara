@@ -1,0 +1,11 @@
+{
+  "status": "draft",
+  "generator_version": "synthetic-finance-v1",
+  "groups": 5000,
+  "rows_per_group": 2,
+  "data_seed": 20261115,
+  "split_seed": 20261116,
+  "injection_seed": 20261117,
+  "split_percent": {"train": 70, "validation": 15, "test": 15},
+  "anomaly_percent": 10
+}

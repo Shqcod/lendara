@@ -1,0 +1,63 @@
+{
+  "browser_exit_code": 0,
+  "config_listing": {
+    "default_tests": 9,
+    "exit_codes": [
+      0,
+      0
+    ],
+    "model_tests": 3
+  },
+  "development_database_changed": false,
+  "env_changed": false,
+  "first_attempt": "webServer startup timed out at60s before tests; active model restored",
+  "frontend_build_exit_code": 0,
+  "frontend_check": {
+    "errors": 0,
+    "exit_code": 0,
+    "warnings": 0
+  },
+  "pint_test": "passed",
+  "runs": [
+    {
+      "results": [
+        {
+          "duration_ms": 31974,
+          "status": "passed"
+        }
+      ],
+      "status": "expected",
+      "title": "cookie SPA: CSRF, daftar, masuk, muat ulang, keluar, dan akses anonim"
+    },
+    {
+      "results": [
+        {
+          "duration_ms": 7790,
+          "status": "passed"
+        }
+      ],
+      "status": "expected",
+      "title": "kegagalan jaringan tidak mengulang mutasi secara otomatis"
+    },
+    {
+      "results": [
+        {
+          "duration_ms": 305717,
+          "status": "passed"
+        }
+      ],
+      "status": "expected",
+      "title": "model asli: nasabah kirim, gagal koneksi, retry, revisi/kirim ulang dan persetujuan L1/L2"
+    }
+  ],
+  "startup_timeout_final_seconds": 120,
+  "stats": {
+    "duration": 380727.715,
+    "expected": 3,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-11-15T08:45:09.553Z",
+    "unexpected": 0
+  },
+  "test_active_model_restored": true
+}

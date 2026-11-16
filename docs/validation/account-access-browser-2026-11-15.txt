@@ -1,0 +1,8 @@
+Browser Chrome - final account access regression
+Command: scripts/frontend.ps1 -NpmArgs (run test:e2e -- account-access.spec.ts auth.spec.ts admin.spec.ts --reporter=list,json)
+Exit code: 0
+Stats: {"startTime": "2026-11-15T06:28:59.351Z", "duration": 228774.066, "expected": 4, "skipped": 0, "unexpected": 0, "flaky": 0}
+admin nonaktif dan aktif kembali mencabut sesi serta melepas tugas; ubah peran memerlukan login baru | expected | 127050ms passed
+admin: buat akun tanpa replay, login akun baru, filter dan log aman, akses reviewer ditolak | expected | 50143ms passed
+cookie SPA: CSRF, daftar, masuk, muat ulang, keluar, dan akses anonim | expected | 27899ms passed
+kegagalan jaringan tidak mengulang mutasi secara otomatis | expected | 7767ms passed

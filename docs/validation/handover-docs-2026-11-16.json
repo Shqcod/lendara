@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-16",
+  "documentation_only": true,
+  "documentation_files_checked_initial": 8,
+  "local_links_checked_initial": 48,
+  "fences_balanced": true,
+  "registry_pin_matches": true,
+  "domain_entities": 14,
+  "frozen_protocol_lock_unchanged": true,
+  "mermaid_render_checked": false,
+  "live_checks": {
+    "development_accounts": "runtime_guard_failed",
+    "restore_integrity": "runtime_guard_failed",
+    "mysql_3306_listening": false,
+    "demo_restore_ports_listening": false,
+    "dpapi_credentials_readable": true
+  },
+  "application_suites_rerun": false,
+  "services_started": false,
+  "accounts_created": false,
+  "recipient_acceptance_complete": false,
+  "documentation_files_checked_final": 11,
+  "local_links_checked_final": 48
+}

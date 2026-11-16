@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-16",
+  "database": "kkp_pinjaman",
+  "accounts_ready": true,
+  "active_role_present": {
+    "nasabah": true,
+    "verifikator": true,
+    "penyetuju_1": true,
+    "penyetuju_2": true,
+    "admin": true
+  },
+  "credentials_read_or_logged": false,
+  "owned_demo_processes_running": 5,
+  "process_start_times_match": true,
+  "scheduler_heartbeat_recent": true,
+  "local_model_ready": true,
+  "model": "if-v1-b-seed17",
+  "read_only_preflight": true,
+  "fictional_pdf_documents_created": 3,
+  "pdf_one_page_each": true,
+  "pdf_below_upload_limit": true,
+  "pdf_fictional_labels_verified": true,
+  "pdf_visual_review_passed": true,
+  "pdf_files_git_ignored": true,
+  "documents_uploaded_by_agent": false,
+  "operator_workflow_complete": false,
+  "environment_files_changed": false
+}

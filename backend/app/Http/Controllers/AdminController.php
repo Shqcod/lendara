@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AccountManagement;
 use App\Services\InternalAccounts;
 use App\Services\InternalReadModel;
 use Illuminate\Http\Request;
@@ -40,6 +41,21 @@ class AdminController extends Controller
             'is_active' => ['prohibited'], 'id' => ['prohibited'], 'actor_id' => ['prohibited']]);
 
         return $this->json(['data' => new UserResource($accounts->create($request->user()->id, $data)), 'message' => 'Akun internal berhasil dibuat.'], 201);
+    }
+
+    public function change(Request $request, string $user, AccountManagement $management)
+    {
+        $action = $request->route('operation');
+        $data = $request->validate(['expected_role' => ['required', Rule::in(InternalAccounts::ROLES)],
+            'expected_is_active' => ['required', function ($key, $value, $fail) {
+                if (! is_bool($value)) {
+                    $fail('Status akun harus boolean.');
+                }
+            }],
+            'role' => $action === 'role' ? ['required', Rule::in(InternalAccounts::ROLES)] : ['prohibited'],
+            'reason' => ['required', 'string', 'max:16000'], 'is_active' => ['prohibited'], 'actor_id' => ['prohibited']]);
+
+        return $this->json(['data' => new UserResource($management->change($request->user()->id, (int) $user, $action, $data)), 'message' => 'Akses akun berhasil diperbarui. Sesi lama dicabut.']);
     }
 
     public function logs(Request $request, InternalReadModel $read)

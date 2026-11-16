@@ -1,6 +1,6 @@
 # Kontrak API v1.1 — target implementasi
 
-Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia; irisan admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun belum diimplementasikan. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
+Endpoint nasabah, job prediksi/deadline, serta antrean/detail/snapshot/claim/release internal tersedia; pembuktian mengikuti PROGRESS.md. Unduhan internal sudah mengikuti scope tahap dan tautan snapshot. Aksi verifikator note/revisi/forward tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia; irisan admin daftar/buat akun internal dan log tersedia; edit role/nonaktif-aktif akun internal dan pencabutan sesi tersedia. Prefix Laravel /api/v1. Cookie Sanctum, Accept application/json, credentials dan X-XSRF-TOKEN pada mutasi. Publik: CSRF/register/login; selebihnya auth + is_active + policy. Jangan menerima customer_id/aktor/role/assignment_id/status tujuan dari klien yang seharusnya ditentukan server.
 
 ## Respons
 
@@ -166,7 +166,7 @@ Hanya penyetuju aktif pemilik tugas aktif sesuai tahap/versi terkini. Peran lain
 
 ## Admin — irisan akun internal dan log
 
-GET /admin/users dan POST /admin/users serta GET /admin/activity-logs tersedia hanya untuk admin aktif (cookie SPA, no-store/private). Peran lain 403, anonim 401. Tidak menambah akses pengajuan/dokumen nasabah. Edit role, nonaktif/aktif akun dan pencabutan sesi masih irisan berikutnya, belum ada endpoint mutasinya.
+GET /admin/users dan POST /admin/users serta GET /admin/activity-logs tersedia hanya untuk admin aktif (cookie SPA, no-store/private). Peran lain 403, anonim 401. Tidak menambah akses pengajuan/dokumen nasabah. Edit role dan nonaktif/aktif akun internal serta pencabutan sesi tersedia sesuai kontrak perubahan akses di bawah.
 
 GET users hanya empat peran internal (verifikator,penyetuju_1,penyetuju_2,admin), bukan daftar nasabah. Filter opsional role dari empat peran, email lengkap exact match, is_active=0/1, page/per_page default20 maksimal100. Respons paginated berisi id,name,email,role,is_active; tanpa hash/password/remember_token/sesi. Filter tidak memperluas scope.
 
@@ -175,3 +175,11 @@ POST users: name teks wajib maksimal150, email valid unik maksimal255, role sala
 GET activity-logs: filter exact action maksimal100 dan actor_id positif, page/per_page maksimal100. Data allowlist id,actor_id,action,target_type,target_id,created_at ISO UTC, terbaru dahulu. Description/metadata mentah tidak dikirim untuk menghindari bocornya isi internal/sensitif yang mungkin tercatat pada event lama. Ini ringkasan aktivitas, bukan hak baru membaca snapshot/berkas. Tidak ada endpoint hapus akun/log.
 
 Bootstrap opsional php artisan users:create-admin hanya local/testing, nama/email dan secret prompt kata sandi/konfirmasi; tanpa password bawaan/argumen rahasia. Tidak dijalankan otomatis dan menolak demo/production. Bootstrap pertama di deployment belum diimplementasikan.
+
+## Admin — perubahan peran dan status akun internal
+
+POST /admin/users/{id}/role, /deactivate, /activate tersedia bagi admin aktif untuk target empat role internal. Body reason wajib maksimal16000 karakter, expected_role dan expected_is_active boolean JSON wajib; /role juga role baru empat role internal. is_active/actor_id dilarang. Target nasabah/tidak ada404; peran pemanggil lain403; field invalid422. Snapshot kondisi berbeda/no-op409 ACCOUNT_VERSION_CONFLICT; tugas aktif saat role-change409 ACCOUNT_HAS_ACTIVE_ASSIGNMENTS. Sesuai pilihan pengguna, perubahan akun sendiri409 SELF_ACCOUNT_CHANGE_FORBIDDEN dan admin aktif terakhir dipertahankan (LAST_ACTIVE_ADMIN). Admin tidak mendapat hak dokumen baru.
+
+200 data user aman + message. Role-change hanya tanpa tugas aktif dan mencabut sesi. Nonaktif melepas semua tugas aktif dengan end_type released, reason/ended_by, tanpa transisi pinjaman, mencabut sessions dan remember_token. Aktivasi tidak mengembalikan tugas/sesi lama. Semua konten/status/tugas/sesi/audit atomik pada koneksi database yang sama; konfigurasi sesi lain503 SERVICE_NOT_READY. Dua user actor/target dikunci berurutan ID sebelum aplikasi/assignment, deadlock retry transaksi maksimal3 tanpa efek eksternal.
+
+Login menyimpan access_generation = ID audit user.access_changed terakhir pada sesi, di bawah lock user. Middleware memeriksa marker pada setiap permintaan autentikasi; payload lama tanpa marker dianggap0 (sesi lama sebelum revokasi pertama tetap kompatibel). Sesudah perubahan akses marker berbeda menghasilkan401 SESSION_REVOKED walau akun aktif lagi; inactive tetap403 ACCOUNT_INACTIVE. Ini menutup sesi lama yang tersimpan terlambat setelah pencabutan. Tidak menjamin penghentian paksa request baca yang sudah berjalan; mutasi domain tetap memeriksa ulang akun aktif/peran di bawah lock.

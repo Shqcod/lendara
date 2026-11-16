@@ -44,7 +44,20 @@ try {
         $wait($directory.'/a.inserted');
         file_put_contents($directory.'/b.attempting', 'transaction-active');
     }
-    if ($mode === 'accounts_http') {
+    if (in_array($mode, ['deactivate_claim', 'claim_deactivate'], true)) {
+        Auth::guard('web')->setUser(User::findOrFail($actor));
+        $changing = ($mode === 'deactivate_claim' && $worker === 'a') || ($mode === 'claim_deactivate' && $worker === 'b');
+        $pointer = DB::table('loan_applications')->where('id', $application)->value('current_submission_id');
+        $request = Request::create($changing ? '/api/v1/admin/users/'.$submission.'/deactivate' : '/api/v1/internal/applications/'.$application.'/assignments', 'POST', [], [], [],
+            ['HTTP_ORIGIN' => 'http://localhost:5173', 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
+            json_encode($changing ? ['expected_role' => 'verifikator', 'expected_is_active' => true, 'reason' => 'Race fiktif'] : ['expected_current_submission_id' => (int) $pointer]));
+        $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
+        $httpStatus = $response->getStatusCode();
+        if (! in_array($httpStatus, [200, 201, 401, 403], true)) {
+            throw new RuntimeException('Unexpected management HTTP '.$httpStatus);
+        }
+        $claimResult = $httpStatus === 200 ? 'changed' : ($httpStatus === 201 ? 'created' : 'revoked');
+    } elseif ($mode === 'accounts_http') {
         Auth::guard('web')->setUser(User::findOrFail($actor));
         $password = bin2hex(random_bytes(16));
         $request = Request::create('/api/v1/admin/users', 'POST', [], [], [],

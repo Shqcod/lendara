@@ -1,0 +1,114 @@
+{
+  "byte_equal_files": [
+    "borderline.csv",
+    "config.json",
+    "test.csv",
+    "train.csv",
+    "validation.csv",
+    "manifest.json"
+  ],
+  "holdout_metrics_opened": false,
+  "linux_verified": false,
+  "manifest": {
+    "config_sha256": "7f9591393401c5b3dfb98b99c7cf3866dbad0c2d0f24a441e525f80e7a3cdd64",
+    "evaluated": false,
+    "feature_schema": "loan-finance-v1",
+    "files": {
+      "borderline.csv": {
+        "bytes": 233981,
+        "sha256": "18177fbafdf27eff1ef053b45123534edb4c5dfc4e3b69aadc9c36d40122d5f0"
+      },
+      "config.json": {
+        "bytes": 680,
+        "sha256": "7f9591393401c5b3dfb98b99c7cf3866dbad0c2d0f24a441e525f80e7a3cdd64"
+      },
+      "test.csv": {
+        "bytes": 153059,
+        "sha256": "4dd2b76c66365f3e24d96fb8e8a6ffcda740d56ab1746e8509c8dd5bb088478d"
+      },
+      "train.csv": {
+        "bytes": 714021,
+        "sha256": "fe265ea94c71b9c6ee6f6351405a89226b8dfbba23e498cb32f090b81fa7c3be"
+      },
+      "validation.csv": {
+        "bytes": 153168,
+        "sha256": "7ba3fd466f34444eea985e426fba8eeef9bb01aae695b6ffe6977da7c0c27acd"
+      }
+    },
+    "protocol_sha256": "0387430a6f3b8274d1372e40358832b9ad2d845ac5facf0ce96095a079d1f64e",
+    "python_version": "3.12.4",
+    "raw_input_names": [
+      "monthly_income",
+      "monthly_expenses",
+      "existing_installments",
+      "loan_amount",
+      "tenor_months"
+    ],
+    "source_sha256": {
+      "ml-service/experiments/generate.py": "36feabd952f5c846df032fe904b78029c389ca3159494c5f1e8431ec3b7c838f",
+      "ml-service/experiments/generate_locked.py": "aeede2462b1d6b5f218676f17dad70e37fa4350d0dd0117915b76196fdd8e0c4"
+    },
+    "split_summary": {
+      "borderline": {
+        "anomaly": 200,
+        "anomaly_kinds": {
+          "borderline_expense_pressure": 68,
+          "borderline_installment_pressure": 66,
+          "borderline_loan_mismatch": 66,
+          "normal": 1800
+        },
+        "groups": 1000,
+        "normal": 1800,
+        "rows": 2000
+      },
+      "test": {
+        "anomaly": 150,
+        "anomaly_kinds": {
+          "expense_pressure": 38,
+          "installment_pressure": 38,
+          "loan_mismatch": 38,
+          "low_expense_large_loan": 36,
+          "normal": 1350
+        },
+        "groups": 750,
+        "normal": 1350,
+        "rows": 1500
+      },
+      "train": {
+        "anomaly": 700,
+        "anomaly_kinds": {
+          "expense_pressure": 176,
+          "installment_pressure": 176,
+          "loan_mismatch": 174,
+          "low_expense_large_loan": 174,
+          "normal": 6300
+        },
+        "groups": 3500,
+        "normal": 6300,
+        "rows": 7000
+      },
+      "validation": {
+        "anomaly": 150,
+        "anomaly_kinds": {
+          "expense_pressure": 38,
+          "installment_pressure": 38,
+          "loan_mismatch": 38,
+          "low_expense_large_loan": 36,
+          "normal": 1350
+        },
+        "groups": 750,
+        "normal": 1350,
+        "rows": 1500
+      }
+    },
+    "status": "locked",
+    "trained": false,
+    "training_data_version": "synthetic-finance-v1-r2-6984a0cfa3152b2c"
+  },
+  "pip_check": "passed",
+  "python_tests": {
+    "exit_code": 0,
+    "passed": 30,
+    "seconds": 8.433
+  }
+}

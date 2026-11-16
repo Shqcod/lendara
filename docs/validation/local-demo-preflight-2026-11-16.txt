@@ -1,0 +1,23 @@
+Lendara - local Windows demo readiness
+MySQL8.0.30 / test DB kkp_pinjaman_test; no environment file edits.
+Initial target: 3 failed / 0 assertions due to stopped MySQL (connection refused).
+Existing Laragon my.ini/datadir verified, existing server started without initialize/reset.
+DB test guard: PASS.
+Target after server start:3 passed /17 assertions /1.21s.
+Full backend:149 passed /1622 assertions /58.43s.
+Target after diagnostic stage labels:3 passed /17 assertions /0.96s.
+Final target with submission feature-contract guard:4 passed /20 assertions /0.95s.
+Final full backend:150 passed /1626 assertions /57.67s.
+Pint:PASS. PowerShell parser:PASS. Invalid registry pin:rejected before startup.
+
+model_browser_run.py --local-preflight: exit0.
+Real Uvicorn model if-v1-b-seed17, local_model_ready=true, read_only=true.
+Test active model restored; no development database change; no browser rerun.
+Real-model preflight repeated after feature-contract guard:exit0, test model restored.
+local_launcher_smoke.py: exit0, real model ready, anonymous401,
+registry pin verified, process-only random key, owned launcher stopped/port released.
+
+Actual development preflight: exit1 at mode_environment. Configuration not activated.
+No model/registry/dependency/holdout changes; no secret values in this evidence.
+No full Python/frontend/browser suite rerun. No claim of restricted runtime grants,
+live worker/scheduler, HTTPS, backup/restore, POSIX timeout or deployment readiness.

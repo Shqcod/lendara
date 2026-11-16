@@ -33,7 +33,7 @@ class CustomerDocuments
                 if (! $application->status->editable()) {
                     throw new DomainError('APPLICATION_NOT_EDITABLE', 'Dokumen hanya dapat diunggah saat draf atau diminta revisi.');
                 }
-                if (! DB::table('document_types')->where('id', $type)->where('is_active', true)->lockForUpdate()->exists()) {
+                if (! DB::table('document_types')->where('id', $type)->where('is_active', true)->sharedLock()->exists()) {
                     throw ValidationException::withMessages(['document_type_id' => ['Jenis dokumen tidak tersedia untuk unggahan.']]);
                 }
                 // A locking read observes the latest committed version even under MySQL REPEATABLE READ.

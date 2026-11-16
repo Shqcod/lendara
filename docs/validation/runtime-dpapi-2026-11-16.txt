@@ -1,0 +1,25 @@
+Lendara - local Windows runtime provisioning, 2026-11-16
+Target unit/feature guard+grant tests:4 passed /15 assertions /0.72s.
+Full backend on MySQL kkp_pinjaman_test:156 passed /1644 assertions /47.24s.
+Pint, PowerShell parsers and git diff whitespace:PASS.
+
+Testing provisioning path: server-generated random secret -> private pipe ->
+PSCredential/DPAPI file, plaintext absence and same-user round-trip verified.
+Runtime identity and immutable/column-operation denial guard:PASS.
+Temporary test account cleaned; encrypted fixture remains ignored.
+Abort acknowledgment path:expected exit1, owned test identity confirmed absent,
+no credential file created. No unrelated identity changed.
+
+Operational local demo provisioning:PASS; new scoped MySQL account retained,
+encrypted credential stored, repeat provisioning refused/file unchanged.
+Profile Accounts loads runtime credential and guard passes; expected exit1 because
+all five application role flags are false. No application user created.
+Profile Check -> real model if-v1-b-seed17:exit0/read_only true. Owned temporary
+model process stopped; no .env/model/submission/job changes.
+
+Security scan:12 candidate files /5 local sensitive values plus runtime password,
+no matches; secrets only in memory, none recorded. Initial sandbox DPAPI decrypt
+failure caused an empty-value scan false positive; fail-fast corrected scan passed
+under provisioning Windows context. Credential/xml and environment files ignored.
+Frozen protocol/LOCK unchanged. No browser/frontend/full ML rerun; no claim of
+operator login, permanent workers, backup/restore or public deployment readiness.

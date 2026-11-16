@@ -18,7 +18,7 @@ Dokumen ini adalah acuan proyek; jangan bergantung pada riwayat chat. Bila kode 
 
 - `frontend/`: SvelteKit 3 + TypeScript 6, scaffold dan UI autentikasi tersedia; gunakan Node 22.17+ seri 22 melalui scripts/frontend.ps1. Lockfile wajib dipertahankan.
 - `backend/`: Laravel 12 API + Sanctum cookie SPA + MySQL; scaffold/kode autentikasi tersedia, pembuktian MySQL/browser mengikuti PROGRESS.
-- `ml-service/`: FastAPI internal, stub tersedia; Isolation Forest asli belum dibuat.
+- `ml-service/`: FastAPI internal, stub dan runtime Isolation Forest terpilih tersedia; registrasi metadata dan smoke queue Laravel ke model tersedia, handover model aktif/demo masih berikutnya.
 - `config/`: contoh konfigurasi; `scripts/`: bantuan PowerShell Windows; `docs/`: acuan.
 - Satu Git repository di root. Jangan membuat repository Git bersarang.
 - Pertahankan versi major yang disepakati. Simpan lockfile npm/Composer; pin dependensi Python. Jangan memakai `--ignore-platform-reqs`, mematikan TLS/audit, atau memaksa dependency yang tidak kompatibel.
@@ -36,13 +36,15 @@ Dokumen ini adalah acuan proyek; jangan bergantung pada riwayat chat. Bila kode 
 - Gunakan session dan queue database. `pcntl` tidak tersedia pada PHP Windows: jangan menganggap timeout worker POSIX terbukti di Windows.
 - Demo akhir menolak mode stub dan model aktif `stub-*`.
 - `.env`, token, kunci internal, berkas unggahan, dan identitas nyata tidak masuk Git/log. Contoh konfigurasi tidak berisi rahasia.
+- Atas instruksi pengguna, semua berkas environment termasuk `.env.example`, `.env.testing.example`, `.env_example` dan `*.env.example` diabaikan Git. Jangan force-add atau mengembalikan tracking contoh ini; berkas lokal tetap dipertahankan. Gitignore tidak menghapus isi commit historis.
 - Jangan menjalankan `migrate:fresh`, DROP/TRUNCATE, menghapus data/berkas pengguna, atau menimpa `.env` tanpa kebutuhan dan otorisasi yang jelas. Pengujian hanya pada DB pengujian terpisah.
 
 ## Cara mengerjakan
 
 - Kerjakan irisan kecil: backend + frontend + pengujian yang relevan. Penuhi kriteria tahap, lalu lanjut.
-- Ikuti tahap aktif di PROGRESS. Setup/auth, schema 14 tabel, irisan nasabah, dasar job prediksi/deadline, serta antrean/claim/release dan scope internal sudah terbukti. Aksi verifikator note/revisi/forward sudah tersedia; retry manual juga tersedia; persetujuan tingkat 1/2 juga tersedia; admin daftar/buat akun internal dan log ringkas tersedia; tahap berikutnya admin edit role/nonaktif-aktif akun dan pencabutan sesi atomik per irisan. Jangan mengaku semua fitur atau model asli selesai karena stub lulus.
+- Ikuti tahap aktif di PROGRESS. Setup/auth, schema 14 tabel, irisan nasabah, dasar job prediksi/deadline, serta antrean/claim/release dan scope internal sudah terbukti. Aksi verifikator note/revisi/forward sudah tersedia; retry manual juga tersedia; persetujuan tingkat 1/2 juga tersedia; admin daftar/buat akun internal, log ringkas, edit role/nonaktif-aktif akun dan pencabutan sesi atomik tersedia. Perubahan akun sendiri dilarang, admin aktif terakhir dilindungi; role-change menolak tugas aktif dan nonaktif melepasnya. Tahap berikutnya finalisasi rancangan generator/split/evaluasi sebelum model asli serta pengamanan runtime per irisan. Jangan mengaku semua fitur atau model asli selesai karena stub lulus.
 - Pelatihan model dimulai sebagai jalur tersendiri setelah schema dan generator dikunci; tidak perlu menunggu UI selesai.
+- Protokol `docs/ML_EXPERIMENT_PLAN.md` disetujui/dikunci pada tag lokal ml-protocol-v1-locked; jangan mengubah dokumen beku untuk status implementasi. LOCK.json mencatat hash/commit per tahap; runbook di docs/ML_RUNBOOK.md. Generator/pipeline, evaluator36 fit dan selection sudah selesai; test+borderline telah dibuka sekali. FastAPI app.serve mode model sudah teruji; registrasi metadata model B seed17 dan queue Laravel ke model sudah terbukti pada DB test; command handover maintenance dengan expected-active sudah tersedia/teruji pada DB test; regresi Chrome model aktif pada DB test kini lulus submit/retry/revisi/resubmit/approve L1/L2 dengan model test dipulihkan; berikutnya pengamanan operasional/deployment/serah terima; jangan menghapus marker atau membuka ulang holdout. Tag ml-config-v1-selected hanya sesudah pemilihan nyata; test+borderline dibuka sekali sesudah konfigurasi terkunci. Draf lama hanya historis; implementasi sesuai protokol yang disetujui tidak memerlukan persetujuan ulang.
 - Tulis feature test otorisasi, transisi, snapshot, dan constraint pada MySQL nyata. SQLite tidak cukup untuk membuktikan constraint MySQL.
 - Setelah perubahan, jalankan pemeriksaan yang tersedia; laporkan yang lulus, gagal, dan belum bisa dijalankan. Jangan mengarang hasil.
 - Perbarui PROGRESS setiap sesi: perubahan konkret, perintah uji + hasil, kendala, tugas berikutnya. Tambahkan keputusan baru ke DECISIONS.
@@ -51,7 +53,7 @@ Dokumen ini adalah acuan proyek; jangan bergantung pada riwayat chat. Bila kode 
 
 ## Pemeriksaan
 
-- Stub: dari `ml-service`, `python -m unittest discover -s tests -v` dalam venv.
+- Suite Python penuh (generator/pipeline/stub): dari `ml-service`, `..\.tools\ml-training-venv\Scripts\python.exe -m unittest discover -s tests -v` setelah memasang requirements-model.lock.txt. Venv stub lama tanpa sklearn hanya menjalankan `python -m unittest discover -s tests -p test_stub.py -v`.
 - Backend setelah tersedia: `php artisan test`, `vendor/bin/pint --test`; sesuaikan executable Windows bila perlu.
 - Frontend setelah tersedia: `npm run check`, `npm run build`; tambahkan pengujian UI sesuai fitur.
 - Uji end-to-end browser wajib untuk login cookie/CSRF/CORS; HTTP client saja tidak membuktikan perilaku browser.

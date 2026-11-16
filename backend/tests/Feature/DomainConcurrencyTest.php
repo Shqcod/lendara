@@ -55,7 +55,7 @@ class DomainConcurrencyTest extends TestCase
             touch($directory.'/start');
             $wait(['a.inserted', 'b.attempting']);
             $this->assertTrue($processes['b']->isRunning());
-            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http', 'approval_http', 'accounts_http'], true)) {
+            if (in_array($mode, ['claim_http', 'verification_http', 'retry_http', 'approval_http', 'accounts_http', 'deactivate_claim', 'claim_deactivate'], true)) {
                 $a = (int) file_get_contents($directory.'/a.ready');
                 $b = (int) file_get_contents($directory.'/b.ready');
                 $until = microtime(true) + 8;
@@ -92,6 +92,22 @@ class DomainConcurrencyTest extends TestCase
                     $process->stop(1);
                 }
             }
+        }
+    }
+
+    public function test_deactivation_and_claim_are_serialized_in_both_orders(): void
+    {
+        foreach (['deactivate_claim', 'claim_deactivate'] as $mode) {
+            $admin = User::factory()->create(['role' => 'admin']);
+            $reviewer = User::factory()->create(['role' => 'verifikator']);
+            $app = $this->loan(overrides: ['status' => 'pending_verification']);
+            $snapshot = $this->submission($app);
+            DB::table('loan_applications')->where('id', $app)->update(['current_submission_id' => $snapshot]);
+            $results = $this->race($mode, $mode === 'deactivate_claim' ? $admin->id : $reviewer->id, $app, $reviewer->id, $mode === 'deactivate_claim' ? $reviewer->id : $admin->id);
+            $this->assertSame($mode === 'deactivate_claim' ? ['changed', 'revoked'] : ['created', 'changed'], array_column($results, 'result'));
+            $this->assertDatabaseHas('users', ['id' => $reviewer->id, 'is_active' => false]);
+            $this->assertSame(0, DB::table('assignments')->where('application_id', $app)->whereNull('ended_at')->count());
+            $this->assertDatabaseHas('loan_applications', ['id' => $app, 'status' => 'pending_verification']);
         }
     }
 

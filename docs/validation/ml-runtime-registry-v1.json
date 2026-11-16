@@ -1,0 +1,56 @@
+{
+  "default_model_version_code": "if-v1-b-seed17",
+  "models": [
+    {
+      "algorithm": "IsolationForest",
+      "artifact_hash": "fe968bc4b284d0bbf0f97d5eed3578b4ce8dcffbb1020144554c40c272ef4fc4",
+      "artifact_path": ".tools/ml-selection-v1/B-17.joblib",
+      "contamination": 0.15,
+      "decision_threshold": 0.0,
+      "dependencies": {
+        "path": "ml-service/requirements-model.lock.txt",
+        "pip_check": "passed",
+        "platform": "Windows x64",
+        "python_version": "3.12.4",
+        "sha256": "cafdd9424af3c2efbd682c88a3c9948513d25094079f12ff733e860fd311d41f",
+        "source_commit": "ccd4bb78c76e628bef7611c8c7ee6605c0375726"
+      },
+      "feature_names": [
+        "monthly_income",
+        "monthly_expenses",
+        "existing_installments",
+        "loan_amount",
+        "tenor_months",
+        "installments_to_income",
+        "loan_to_income",
+        "expenses_to_income"
+      ],
+      "is_active": false,
+      "parameters": {
+        "bootstrap": false,
+        "feature_schema": "loan-finance-v1",
+        "max_features": 1.0,
+        "max_samples": 256,
+        "n_estimators": 100,
+        "n_jobs": 1,
+        "raw_input_names": [
+          "monthly_income",
+          "monthly_expenses",
+          "existing_installments",
+          "loan_amount",
+          "tenor_months"
+        ],
+        "seed": 17,
+        "variant": "B"
+      },
+      "protocol_sha256": "0387430a6f3b8274d1372e40358832b9ad2d845ac5facf0ce96095a079d1f64e",
+      "score_method": "decision_function",
+      "source": "model",
+      "trained": true,
+      "training_data_version": "synthetic-finance-v1-r2-6984a0cfa3152b2c",
+      "version_code": "if-v1-b-seed17"
+    }
+  ],
+  "pipeline_sha256": "8f1858d573bda35d427693895d2d82a87497a56ea7430b281b0a767854e958cc",
+  "schema_version": 1
+}

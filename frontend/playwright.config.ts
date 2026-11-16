@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
 	testDir: './tests',
+	testIgnore: ['**/model-flow.spec.ts', '**/restore-browser.spec.ts'],
 	fullyParallel: false,
 	workers: 1,
 	retries: 0,

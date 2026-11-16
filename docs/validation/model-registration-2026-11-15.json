@@ -1,0 +1,27 @@
+{
+  "browser_rerun": false,
+  "database_guard": "PASS MySQL 8.0.30 / kkp_pinjaman_test",
+  "development_database_changed": false,
+  "env_changed": false,
+  "full_suite": {
+    "assertions": 1448,
+    "duration_seconds": 122.81,
+    "exit_code": 0,
+    "passed": 135
+  },
+  "model_active_replaced": false,
+  "pint_test": "passed",
+  "python_runtime_suite_rerun": false,
+  "target_after_single_read_hardening": {
+    "assertions": 30,
+    "duration_seconds": 1.84,
+    "exit_code": 0,
+    "passed": 5
+  },
+  "target_initial": {
+    "assertions": 30,
+    "duration_seconds": 39.84,
+    "exit_code": 0,
+    "passed": 5
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "application_id": 2566,
+  "version": "if-v1-b-seed17",
+  "states": [
+    {
+      "status": "pending_verification",
+      "submission": 1691,
+      "checks": [
+        {
+          "id": 1182,
+          "attempt": 1,
+          "status": "failed",
+          "score": null,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "status": "pending_verification",
+      "submission": 1691,
+      "checks": [
+        {
+          "id": 1182,
+          "attempt": 1,
+          "status": "failed",
+          "score": null,
+          "model": "if-v1-b-seed17"
+        },
+        {
+          "id": 1183,
+          "attempt": 2,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "status": "pending_verification",
+      "submission": 1692,
+      "checks": [
+        {
+          "id": 1184,
+          "attempt": 1,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "status": "approved",
+      "submission": 1692,
+      "checks": [
+        {
+          "id": 1184,
+          "attempt": 1,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    }
+  ],
+  "document_setup": "D01 UI; other required types guarded fixtures"
+}

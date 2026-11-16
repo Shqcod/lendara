@@ -1,4 +1,4 @@
-param([switch]$Testing)
+param([switch]$Testing, [ValidateRange(1024,65535)][int]$Port = 8000)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $previousEnvironment = $env:APP_ENV
@@ -17,7 +17,7 @@ try {
     Push-Location public
     try {
         # Process-only limits; do not change php.ini or the user's .env.
-        & php -d upload_max_filesize=5M -d post_max_size=8M -d display_errors=0 -S 127.0.0.1:8000 $router
+        & php -d upload_max_filesize=5M -d post_max_size=8M -d display_errors=0 -S ('127.0.0.1:' + $Port) $router
         $result = $LASTEXITCODE
     } finally { Pop-Location }
 } finally {

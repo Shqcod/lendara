@@ -31,7 +31,7 @@ Aktif hanya ML_MODE=stub dan ML_ENV=local/testing, dengan model code stub-v0. X-
 | failure | 503 PREDICTION_UNAVAILABLE |
 | timeout | Tunggu delay 25 detik (default), lalu output normal; klien Laravel 20 detik seharusnya timeout |
 
-Service belum mengimplementasikan mode model. Jika ML_MODE=model atau lingkungan demo/production, ready/predict 503; jangan fallback ke stub. Implementasi model asli harus menolak X-Stub-Scenario. Deployment demo memeriksa mode=model dan model aktif DB tidak stub-* serta tersedia di loaded_model_versions. Seeder stub hanya untuk local/testing, tidak otomatis aktif di demo.
+Entry point app.serve:app kini mendukung mode model melalui registry operator yang dipin SHA256. Mode model mengembalikan source=model dan menolak X-Stub-Scenario; registry/artefak/dependency tidak valid menghasilkan ready/predict503 tanpa fallback. Stub tetap ditolak pada demo/production. Readiness model menambah loaded_models berisi pasangan model_version_code/artifact_hash yang termuat. Lihat ML_MODEL_RUNTIME.md untuk konfigurasi/trust boundary dan bukti HTTP nyata. Deployment demo memeriksa mode=model dan model aktif DB tidak stub-* serta tersedia di loaded_model_versions. Seeder stub hanya untuk local/testing, tidak otomatis aktif di demo.
 
 ## Siklus pemeriksaan
 
@@ -47,8 +47,11 @@ Pengiriman nasabah kini membuat snapshot dan attempt 1 processing atomik, memin 
 
 Pengiriman tanpa model aktif yang sesuai menghasilkan 503 tanpa snapshot parsial. Tidak mengecek /ready melalui HTTP di dalam transaksi. Ketersediaan versi layanan diperiksa saat job memanggil model yang dipin; kegagalan layanan tidak mengubah status bisnis pengajuan. Demo akhir masih memerlukan model asli dan pemeriksaan readiness sesuai target di atas.
 
-## Eksperimen model (belum diimplementasikan)
+## Eksperimen model (selesai; integrasi layanan asli berikutnya)
 
+Protokol final sudah disetujui dan di-commit/tag ml-protocol-v1-locked. Generator revisi experiments/generate_locked.py membuat utama+borderline dari konfigurasi locked, mengikat hash protokol Git dan menghasilkan output baru dengan audit global. Dependency train/serve dipin di requirements-model.lock.txt; dasar pipeline A/B tersedia. Selection validation dan holdout satu kali sudah selesai, artefak B seed17 serta metadata/hash tersedia lokal; registrasi DB dan mode layanan asli belum tersedia. API tetap stub; manifest status locked mengunci data, bukan klaim model terlatih. Ikuti ML_RUNBOOK dan LOCK.json, tanpa mengubah protokol beku untuk catatan status.
+
+Hash-before-joblib-load tersedia pada evaluator. Target berikutnya integrasi layanan model/readiness versi+hash termuat dan model_versions dari metadata terpilih yang tervalidasi. Lihat laporan validation/ml-experiment-v1-results.md; jangan tuning ulang dari holdout.
 - Mulai sejak tahap 3. Generator deterministik dengan random seed, distribusi realistis yang terdokumentasi, jumlah data, rentang, korelasi, dan daftar anomali injeksi.
 - Train/validation/test terpisah; jangan menyalin baris/variasi pelanggan yang sama lintas split. NIK dummy unik jika membuat profil.
 - Lima fitur vs lima+tiga rasio. Pilih contamination numerik >0 <=0.5, seed/config lewat validasi; kunci sebelum final test. Jangan gunakan contamination='auto' karena schema DECIMAL.
@@ -59,3 +62,11 @@ Pengiriman tanpa model aktif yang sesuai menghasilkan 503 tanpa snapshot parsial
 
 
 Retry manual kini tersedia melalui endpoint internal untuk verifikator pemilik tugas aktif pada versi terkini, hanya setelah failed. Model dan input dipin dari percobaan terdahulu; attempt baru/deadline/audit commit sebelum enqueue, tanpa HTTP saat lock. PredictionDispatch bersama pengiriman awal menjaga 202 sesudah commit walau enqueue gagal; scheduler tetap pemulihan terakhir. Job/conditional persistence lama dipakai ulang; hasil attempt lama tidak dapat mengubah attempt baru. Model asli, readiness demo dan proof timeout POSIX tetap belum selesai.
+
+Runtime FastAPI model kini terbukti pada fixture dan HTTP loopback, tanpa mengubah app.main/model_pipeline/LOCK selected. Registrasi/aktivasi model Laravel dan pembuktian database queue ke mode model masih berikutnya; belum ada perubahan .env/DB otomatis.
+
+Laravel ml:register-model kini mengimpor metadata/hash terpilih secara idempoten dan inactive secara default; --activate wajib readiness/hash cocok dan menolak model aktif lain. Smoke database queue test ? worker ? Uvicorn model nyata succeeded tanpa mengubah status bisnis. Handover model aktif global/deployment dan alur nasabah browser mode model masih terbuka. Lihat MODEL_REGISTRATION.md; .env operator/DB pengembangan tidak diubah.
+
+Handover eksplisit kini tersedia melalui ml:handover-model setelah registrasi. Readiness/hash/version diperiksa sebelum transaksi, seluruh versi asli dipertahankan dan processing versi tidak tersedia menolak swap. Command tidak mengelola maintenance/mode lintas proses; operator mengikuti MODEL_HANDOVER.md. DB pengembangan dan konfigurasi operator belum diubah.
+
+Regresi Chrome dengan model asli aktif sementara pada DB test kini lulus sampai approved, mencakup gagal koneksi/retry dan revisi/kirim ulang. Penunjuk aktif sebelumnya dipulihkan; bukan aktivasi lingkungan operator. Lihat MODEL_BROWSER_REGRESSION.md.

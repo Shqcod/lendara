@@ -1,0 +1,29 @@
+{
+  "browser": "Chrome",
+  "csrf_without_token": 419,
+  "registration": 201,
+  "login": 200,
+  "cookie_host_isolated": true,
+  "cors_credentials_verified": true,
+  "draft_decimal_persisted_after_reload": true,
+  "session_reload_verified": true,
+  "logout_anonymous": 401,
+  "source_api_called": false,
+  "mobile_320_overflow": false,
+  "fixture_accounts_and_application_retained": true,
+  "restored_populated_dataset_verified": false,
+  "ui_uploaded_required_documents": 3,
+  "private_download_matches": true,
+  "submission_status": 202,
+  "worker_scoped_to_owned_job": true,
+  "model": "if-v1-b-seed17",
+  "prediction_succeeded": true,
+  "immutable_snapshot_document_fingerprint_unchanged": true,
+  "private_integrity_passed": true,
+  "approval_levels": [
+    1,
+    2
+  ],
+  "final_status": "approved",
+  "submission_worker_approval_verified": true
+}

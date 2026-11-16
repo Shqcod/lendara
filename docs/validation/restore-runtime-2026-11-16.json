@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-16",
+  "database": "kkp_pinjaman_restore_test",
+  "runtime_grants_verified": true,
+  "workspace_verified": true,
+  "source_disk_used": false,
+  "source_database_used": false,
+  "model_version": "if-v1-b-seed17",
+  "model_source": "model",
+  "fixture_prediction_passed": true,
+  "holdout_evaluated": false,
+  "backend_health_status": 200,
+  "csrf_status": 204,
+  "anonymous_status": 401,
+  "cookie_host_names_verified": true,
+  "cors_origin_verified": true,
+  "anonymous_session_created_in_restore_database": true,
+  "browser_verified": false,
+  "workflow_verified": false,
+  "owned_services_stopped": true,
+  "backend_tests": 167,
+  "backend_assertions": 1706,
+  "backend_test_seconds": 60.69,
+  "pint": "passed",
+  "limitations": [
+    "No application records or document metadata in restored source dataset",
+    "Frontend/browser and worker/scheduler not verified on restored target",
+    "Initial startup timeout in HTTP harness resolved with bounded polling"
+  ]
+}

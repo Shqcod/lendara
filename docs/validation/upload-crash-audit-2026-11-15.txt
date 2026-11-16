@@ -1,0 +1,24 @@
+Lendara - upload interruption / orphan audit - 2026-11-15
+MySQL kkp_pinjaman_test; isolated fictional disk per test UUID.
+Real CustomerDocuments service in owned PHP child processes.
+Observer and writer connection IDs differ; transaction levels asserted.
+
+Modes:
+file: child stopped after write, before metadata INSERT; metadata 0, file retained.
+pending-kill: child stopped after INSERT before commit; metadata 0, file retained.
+pending-commit: observer sees no metadata until writer commits; metadata 1, file retained.
+committed: child stopped after committed upload; metadata 1, file retained.
+Audit enqueued no jobs. Recent uncommitted files stay within grace; artificially
+old uncommitted files can be counted as unreferenced observations. After commit
+the same file is referenced. Therefore age/double queries do not authorize deletion.
+
+php artisan test --filter=UploadCrashAuditTest --no-ansi
+1 passed / 57 assertions / 8.28s / exit 0.
+php artisan test --filter="UploadCrashAuditTest|OrphanDocumentAuditTest" --no-ansi
+4 passed / 75 assertions / 8.36s / exit 0.
+php vendor/bin/pint --test: passed.
+git diff --check: passed.
+
+No user data/files deleted; fixtures retained. No production hook/environment edits.
+No full backend/browser/frontend/ML rerun. PCNTL timeout, cleanup enqueue crash,
+lost COMMIT network acknowledgment and destructive orphan recovery not proven.

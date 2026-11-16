@@ -1,0 +1,10 @@
+{
+  "output": ".tools/ml-holdout-v1",
+  "selection": {
+    "metadata_path": "docs/validation/ml-model-v1-metadata.json",
+    "metadata_sha256": "9ccf4455d38f7533738afeeb10cbfb379adb607a26ca7d600d29910b550e796d",
+    "path": "docs/validation/ml-validation-v1.json",
+    "primary": "B",
+    "sha256": "a29f7b9303e28283a744ced72f1b06b55255b840bed7957788352fca669307f0"
+  }
+}

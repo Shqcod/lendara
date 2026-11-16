@@ -1,0 +1,19 @@
+Lendara - local process profile and first development activation
+Initial development state: active model0, processing0, queued0, failed0,
+applications0, internal users0. No individual account data recorded.
+Positive local DB guard:PASS.
+php artisan test --filter="LocalDemoDatabaseGuardTest|LocalDemoReadinessTest" --no-ansi
+5 passed /22 assertions /33.48s.
+Pint:PASS. PowerShell profile parser:PASS.
+
+Operational preparation, not feature-test fixtures:
+Real model launcher with existing backend key passed readiness.
+Profile RegisterModel: if-v1-b-seed17 registered and active in kkp_pinjaman.
+Profile Check: local_model_ready=true, source=model, read_only=true /exit0.
+Existing backend/model keys match; no values recorded or files changed.
+Only owned temporary model process tree stopped after preparation.
+
+No environment, grant, application user, submission, job or artifact changes.
+Model metadata/activation audit intentionally added to empty development DB.
+Full backend/browser/frontend/ML suites not rerun; operator UI and runtime grants,
+permanent service processes, account bootstrap and backup/restore remain pending.

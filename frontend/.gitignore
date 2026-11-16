@@ -6,6 +6,7 @@ node_modules
 .netlify
 .wrangler
 /.svelte-kit
+/.svelte-kit-restore
 /build
 
 # OS
@@ -15,8 +16,6 @@ Thumbs.db
 # Env
 .env
 .env.*
-!.env.example
-!.env.test
 
 # Vite
 vite.config.js.timestamp-*

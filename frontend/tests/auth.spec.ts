@@ -66,11 +66,11 @@ test('cookie SPA: CSRF, daftar, masuk, muat ulang, keluar, dan akses anonim', as
 	await page.getByLabel('Email', { exact: true }).fill('');
 	await expect(page.getByLabel('Kata sandi', { exact: true })).toHaveValue('');
 	await mkdir('../docs/validation', { recursive: true });
-	await page.screenshot({ path: '../docs/validation/auth-desktop.png', fullPage: true });
+	await page.screenshot({ path: `../docs/validation/${process.env.RUNTIME_GRANTS_TEST==='1'?'runtime-':''}auth-desktop.png`, fullPage: true });
 	await page.setViewportSize({ width: 320, height: 780 });
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	await expect(page.getByRole('button', { name: 'Masuk', exact: true })).toBeVisible();
-	await page.screenshot({ path: '../docs/validation/auth-mobile-320.png', fullPage: true });
+	await page.screenshot({ path: `../docs/validation/${process.env.RUNTIME_GRANTS_TEST==='1'?'runtime-':''}auth-mobile-320.png`, fullPage: true });
 });
 
 test('kegagalan jaringan tidak mengulang mutasi secara otomatis', async ({ page }) => {

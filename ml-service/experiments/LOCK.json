@@ -1,0 +1,47 @@
+{
+  "dataset": {
+    "config_path": "ml-service/experiments/generator-v1.locked.json",
+    "config_sha256": "7f9591393401c5b3dfb98b99c7cf3866dbad0c2d0f24a441e525f80e7a3cdd64",
+    "path": "ml-service/data/generated/locked-v1-r2-20261115-a/manifest.json",
+    "sha256": "c7c2d7cb47eecf68887619a5fa5bb0d448c9a1fd6144fcfc832c0c3da368eba8",
+    "source_commit": "ccd4bb78c76e628bef7611c8c7ee6605c0375726",
+    "source_sha256": {
+      "ml-service/experiments/generate.py": "36feabd952f5c846df032fe904b78029c389ca3159494c5f1e8431ec3b7c838f",
+      "ml-service/experiments/generate_locked.py": "aeede2462b1d6b5f218676f17dad70e37fa4350d0dd0117915b76196fdd8e0c4"
+    },
+    "training_data_version": "synthetic-finance-v1-r2-6984a0cfa3152b2c"
+  },
+  "dependencies": {
+    "path": "ml-service/requirements-model.lock.txt",
+    "pip_check": "passed",
+    "platform": "Windows x64",
+    "python_version": "3.12.4",
+    "sha256": "cafdd9424af3c2efbd682c88a3c9948513d25094079f12ff733e860fd311d41f",
+    "source_commit": "ccd4bb78c76e628bef7611c8c7ee6605c0375726"
+  },
+  "evaluation_code": {
+    "sha256": {
+      "ml-service/experiments/evaluate.py": "198b77846e521e9f9471604c307bd1a83af4d5c1430ca7d1654a4d8788c39aa7",
+      "ml-service/tests/test_evaluation.py": "3871cb720da6ff52ff429df8e19d8b689ef771d1f8bf0bb77f356279b9dc0376"
+    },
+    "source_commit": "951c0413040ad540a8b3d21dce329f89ab104147"
+  },
+  "pipeline": {
+    "path": "ml-service/app/model_pipeline.py",
+    "sha256": "8f1858d573bda35d427693895d2d82a87497a56ea7430b281b0a767854e958cc",
+    "source_commit": "ccd4bb78c76e628bef7611c8c7ee6605c0375726"
+  },
+  "protocol": {
+    "commit": "b78f603689846b97cbac4612277779cc6ca00044",
+    "path": "docs/ML_EXPERIMENT_PLAN.md",
+    "sha256": "0387430a6f3b8274d1372e40358832b9ad2d845ac5facf0ce96095a079d1f64e",
+    "tag": "ml-protocol-v1-locked"
+  },
+  "selection": {
+    "metadata_path": "docs/validation/ml-model-v1-metadata.json",
+    "metadata_sha256": "9ccf4455d38f7533738afeeb10cbfb379adb607a26ca7d600d29910b550e796d",
+    "path": "docs/validation/ml-validation-v1.json",
+    "primary": "B",
+    "sha256": "a29f7b9303e28283a744ced72f1b06b55255b840bed7957788352fca669307f0"
+  }
+}

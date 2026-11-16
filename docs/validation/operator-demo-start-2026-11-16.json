@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-16",
+  "database": "kkp_pinjaman",
+  "operator_created_admin_verified": true,
+  "other_roles_ready_at_initial_check": false,
+  "services_running": 5,
+  "model_version": "if-v1-b-seed17",
+  "model_preflight_passed": true,
+  "frontend_http": 200,
+  "backend_health_http": 200,
+  "browser": "Chrome",
+  "anonymous_session_cookies_verified": true,
+  "anonymous_me_status": 401,
+  "cors_origin_verified": true,
+  "operator_login_verified": false,
+  "services_left_running_for_operator": true,
+  "credentials_read_or_logged": false,
+  "environment_files_changed": false,
+  "scheduler_heartbeat_recent": true,
+  "scheduler_heartbeat_max_age_seconds": 120,
+  "worker_process_running_after_preflight": true
+}

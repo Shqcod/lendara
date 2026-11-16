@@ -1,0 +1,22 @@
+Lendara - read-only document integrity - 2026-11-16
+MySQL kkp_pinjaman_test and fictional disk for feature tests.
+Initial target:1 failed/2 passed/24 assertions; harness compared object identity.
+Corrected to compare metadata content; added disk-failure case.
+php artisan test --filter="DocumentIntegrityAuditTest|OrphanDocumentAuditTest" --no-ansi
+7 passed /49 assertions /1.58s /exit0.
+php artisan test --no-ansi
+160 passed /1676 assertions /60.14s /exit0.
+Pint/PowerShell parser/git diff whitespace:PASS.
+
+Cases:large streaming, same-size changed content, truncation, unavailable file,
+unsafe reference and disk failure. Files/jobs/metadata not repaired or mutated.
+Existing test metadata retained; assertions compare fictional fixture deltas.
+Operational Integrity profile on restricted local runtime:exit0 with checked0,
+verified0/unavailable0/size_mismatch0/hash_mismatch0; no demo documents yet.
+Zero-row success does not prove nonempty backup or restore.
+
+No dump/archive/restore, database overwrite, environment edits or user deletion.
+Nine source/doc candidates scanned against5 local sensitive values and runtime DB
+password in memory, no matches. Protocol/LOCK unchanged.
+Browser/frontend/ML suites not rerun. Consistent DB/disk backup and isolated
+restore validation remain pending; audit is not an atomic snapshot.

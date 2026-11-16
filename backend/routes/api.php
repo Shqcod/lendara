@@ -28,6 +28,7 @@ Route::middleware(['auth:sanctum', RequireSpaSession::class, EnsureActiveUser::c
     Route::prefix('admin')->middleware(RequireAdmin::class)->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users', [AdminController::class, 'store']);
+        Route::post('/users/{user}/{operation}', [AdminController::class, 'change'])->whereNumber('user')->whereIn('operation', ['role', 'deactivate', 'activate']);
         Route::get('/activity-logs', [AdminController::class, 'logs']);
     });
 

@@ -1,0 +1,26 @@
+{
+  "database_changed": false,
+  "env_changed": false,
+  "heldout_evaluated": false,
+  "linux_verified": false,
+  "powershell_parser": "passed",
+  "smoke_observed": {
+    "anonymous_status": 401,
+    "artifact_hash": "fe968bc4b284d0bbf0f97d5eed3578b4ce8dcffbb1020144554c40c272ef4fc4",
+    "exit_code": 0,
+    "fixture_is_anomaly": false,
+    "fixture_score": 0.08765331053650444,
+    "missing_model_status": 503,
+    "model_version_code": "if-v1-b-seed17",
+    "prediction_source": "model",
+    "ready_status": 200,
+    "stub_header_status": 422,
+    "transport": "real HTTP loopback Uvicorn"
+  },
+  "tests": {
+    "duration_seconds": 22.526,
+    "exit_code": 0,
+    "passed": 44,
+    "previous_run_passed": 43
+  }
+}

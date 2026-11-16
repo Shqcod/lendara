@@ -1,6 +1,6 @@
 # Menjalankan dan menguji Lendara
 
-Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi, retry manual, persetujuan tingkat 1/2 serta browser revisi/kirim ulang tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun serta model asli masih berikutnya.
+Status aktual ada di PROGRESS.md. Setup, schema, irisan nasabah/job prediksi, serta antrean/detail/claim/release internal lulus MySQL nyata dan Chrome. Akses dokumen reviewer mengikuti tahap dan tautan snapshot. Aksi verifikasi, retry manual, persetujuan tingkat 1/2 serta browser revisi/kirim ulang tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun dan model asli juga tersedia. Workflow Chrome restore lengkap serta backup/restore pengajuan lengkap telah dibuktikan; penerimaan operator development mengikuti HANDOVER.md.
 
 ## Runtime
 
@@ -14,7 +14,7 @@ Konfigurasi SPA mengikuti [dokumentasi Sanctum Laravel 12](https://laravel.com/d
 
 ## Konfigurasi lokal dan database
 
-`backend/.env` dan `backend/.env.testing` dibuat dari contoh tanpa menimpa berkas yang sudah ada. APP_KEY dibuat secara lokal dan tidak dicetak. Isi `DB_USERNAME` dan `DB_PASSWORD` langsung di masing-masing berkas, tanpa mengirimkannya ke chat. Password database boleh kosong hanya jika memang demikian konfigurasi MySQL lokal Anda.
+Pada setup awal, `backend/.env` dan `backend/.env.testing` dibuat lokal tanpa menimpa berkas yang sudah ada. Seluruh contoh environment kini diabaikan Git sesuai instruksi pengguna; gunakan [acuan konfigurasi](CONFIGURATION_REFERENCE.md) saat menyiapkan komputer baru. APP_KEY dibuat secara lokal dan tidak dicetak. Isi `DB_USERNAME` dan `DB_PASSWORD` langsung di masing-masing berkas, tanpa mengirimkannya ke chat. Password database boleh kosong hanya jika memang demikian konfigurasi MySQL lokal Anda.
 
 Pertahankan database terkonfigurasi. Acuan dev `kkp_pinjaman`, test `kkp_pinjaman_test`; perubahan nama produk tidak mengganti database. Nyalakan MySQL Laragon, bukan server MariaDB/XAMPP yang kebetulan ada pada PATH. Periksa `SELECT VERSION()` dan `SHOW TABLES` melalui koneksi lokal sebelum migration. Jika ada tabel lama/berbenturan, bandingkan schema dan berhenti untuk pemeriksaan; jangan reset data.
 
@@ -38,7 +38,7 @@ Pengujian memerlukan `APP_ENV=testing`, koneksi mysql, serta database `kkp_pinja
 
 ## Menjalankan layanan
 
-Semua browser menggunakan `localhost`; `127.0.0.1` hanya bind backend atau komunikasi internal. CORS tepat `http://localhost:5173`, cookie host-only, SameSite=lax, HTTP lokal. Tidak ada autentikasi SSR; permintaan akun dijalankan browser dengan credentials dan X-XSRF-TOKEN. Data pengguna tidak disimpan pada store global server.
+Browser development menggunakan `localhost`; profil restore terpisah menggunakan `127.0.0.1` sesuai RESTORE_WINDOWS_DEMO.md. CORS tepat `http://localhost:5173`, cookie host-only, SameSite=lax, HTTP lokal. Tidak ada autentikasi SSR; permintaan akun dijalankan browser dengan credentials dan X-XSRF-TOKEN. Data pengguna tidak disimpan pada store global server.
 
 Terminal root untuk frontend:
 
@@ -46,11 +46,13 @@ Terminal root untuk frontend:
 powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev
 ```
 
-Terminal root untuk backend: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1`. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil/draf/dokumen, lalu **Tinjau dan lihat pengiriman** menuju `/customer/applications/{id}`. Halaman tinjau memakai data tersimpan; konfirmasi diperlukan sebelum kirim, dan arsip menyimpan identitas/keuangan/berkas per versi. Uang publik tetap string desimal.
+Untuk demo model asli, ikuti [LOCAL_WINDOWS_DEMO](LOCAL_WINDOWS_DEMO.md): model dan Check dahulu, lalu backend memakai `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-demo.ps1 -Action Backend`; worker/scheduler memakai profil yang sama. start-backend.ps1 adalah helper tingkat bawah yang tidak menyelaraskan mode model/credential dengan sendirinya. Halaman masuk/daftar dan pemeriksaan sesi ada di `http://localhost:5173/`. Setelah login nasabah, buka `/customer` untuk profil/draf/dokumen, lalu **Tinjau dan lihat pengiriman** menuju `/customer/applications/{id}`. Halaman tinjau memakai data tersimpan; konfirmasi diperlukan sebelum kirim, dan arsip menyimpan identitas/keuangan/berkas per versi. Uang publik tetap string desimal.
 
 Helper menjalankan PHP built-in server pada 127.0.0.1:8000 dari direktori public dengan router bawaan Laravel. Parameter proses upload_max_filesize=5M, post_max_size=8M, display_errors=0; log error PHP tetap aktif. Ini tidak mengubah php.ini global (Laragon saat diperiksa mengizinkan 2G) atau .env. Pada server demo/deployment, samakan batas PHP dan webserver/reverse proxy; pengujian lokal bukan bukti konfigurasi deployment. File tepat 5.242.880 byte diterima. File lebih besar mendapat 422 file; total POST lebih dari 8M mendapat 413 PAYLOAD_TOO_LARGE sebelum parsing field. Validasi isi server tetap wajib walau UI sudah membatasi ukuran/ekstensi.
 
-Terminal root untuk ML:
+### Mode stub untuk pengembangan/test terpisah
+
+Bagian berikut khusus stub local/testing; jangan mengganti mode/model aktif development yang sudah digunakan demo. Untuk demo akhir gunakan LOCAL_WINDOWS_DEMO dan model asli. Terminal root untuk stub ML:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start-ml.ps1
@@ -124,4 +126,4 @@ Audit npm versi final melaporkan empat paket terdampak tingkat rendah dari deepm
 
 ## Admin lokal — akun dan log
 
-Gunakan admin yang sudah ada, atau jalankan eksplisit `php artisan users:create-admin` dari backend pada local/testing untuk bootstrap. Command meminta nama/email/kata sandi tersembunyi/konfirmasi, tanpa kredensial bawaan, tidak menimpa akun lama dan tidak berlaku pada demo/production. Command pada sesi ini hanya diuji di DB test, tidak membuat akun dev otomatis. Jangan menaruh kata sandi di argumen/chat/Git/log. Setelah login pilih Buka pengelolaan admin → /admin. Admin dapat membuat empat peran internal, melihat daftar internal dan log ringkas; tidak mendapat akses dokumen nasabah. Pengubahan peran, penonaktifan/aktivasi dan pencabutan sesi belum tersedia pada irisan ini.
+Gunakan admin yang sudah ada, atau jalankan eksplisit `php artisan users:create-admin` dari backend pada local/testing untuk bootstrap. Command meminta nama/email/kata sandi tersembunyi/konfirmasi, tanpa kredensial bawaan, tidak menimpa akun lama dan tidak berlaku pada demo/production. Command pada sesi ini hanya diuji di DB test, tidak membuat akun dev otomatis. Jangan menaruh kata sandi di argumen/chat/Git/log. Setelah login pilih Buka pengelolaan admin → /admin. Admin dapat membuat empat peran internal, melihat daftar internal dan log ringkas; tidak mendapat akses dokumen nasabah. Pengubahan peran, penonaktifan/aktivasi dan pencabutan sesi akun internal tersedia; alasan/konfirmasi wajib.

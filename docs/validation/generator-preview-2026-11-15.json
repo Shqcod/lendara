@@ -1,0 +1,109 @@
+{
+  "commands": [
+    ".venv/Scripts/python.exe -m experiments.generate --config experiments/generator-v1.draft.json --output data/generated/generator-v1-preview-20261115-a",
+    "python -m experiments.generate --config experiments/generator-v1.draft.json --output data/generated/generator-v1-preview-20261115-b"
+  ],
+  "comparison": {
+    "config.json": true,
+    "manifest.json": true,
+    "test.csv": true,
+    "train.csv": true,
+    "validation.csv": true
+  },
+  "evaluation_run": false,
+  "exit_codes": [
+    0,
+    0
+  ],
+  "manifest": {
+    "config_sha256": "90a3c752cb7659f55419bdd1524d5e0d084f531edf576917cca4a5ddd57393f4",
+    "excluded_from_features": [
+      "row_id",
+      "customer_group_id",
+      "is_anomaly",
+      "anomaly_kind"
+    ],
+    "feature_schema": "loan-finance-v1",
+    "files": {
+      "config.json": {
+        "bytes": 298,
+        "sha256": "90a3c752cb7659f55419bdd1524d5e0d084f531edf576917cca4a5ddd57393f4"
+      },
+      "test.csv": {
+        "bytes": 153059,
+        "sha256": "4dd2b76c66365f3e24d96fb8e8a6ffcda740d56ab1746e8509c8dd5bb088478d"
+      },
+      "train.csv": {
+        "bytes": 714021,
+        "sha256": "fe265ea94c71b9c6ee6f6351405a89226b8dfbba23e498cb32f090b81fa7c3be"
+      },
+      "validation.csv": {
+        "bytes": 153168,
+        "sha256": "7ba3fd466f34444eea985e426fba8eeef9bb01aae695b6ffe6977da7c0c27acd"
+      }
+    },
+    "generator_version": "synthetic-finance-v1",
+    "python_version": "3.12.4",
+    "raw_input_names": [
+      "monthly_income",
+      "monthly_expenses",
+      "existing_installments",
+      "loan_amount",
+      "tenor_months"
+    ],
+    "source_sha256": {
+      "experiments/generate.py": "c0f8b8a395bfd942ae3d63d361bf574585966e48b6d572e0f0f0001dffe1adf7"
+    },
+    "split_summary": {
+      "test": {
+        "anomaly": 150,
+        "anomaly_kinds": {
+          "expense_pressure": 38,
+          "installment_pressure": 38,
+          "loan_mismatch": 38,
+          "low_expense_large_loan": 36,
+          "normal": 1350
+        },
+        "groups": 750,
+        "normal": 1350,
+        "rows": 1500
+      },
+      "train": {
+        "anomaly": 700,
+        "anomaly_kinds": {
+          "expense_pressure": 176,
+          "installment_pressure": 176,
+          "loan_mismatch": 174,
+          "low_expense_large_loan": 174,
+          "normal": 6300
+        },
+        "groups": 3500,
+        "normal": 6300,
+        "rows": 7000
+      },
+      "validation": {
+        "anomaly": 150,
+        "anomaly_kinds": {
+          "expense_pressure": 38,
+          "installment_pressure": 38,
+          "loan_mismatch": 38,
+          "low_expense_large_loan": 36,
+          "normal": 1350
+        },
+        "groups": 750,
+        "normal": 1350,
+        "rows": 1500
+      }
+    },
+    "status": "draft",
+    "trained": false,
+    "training_data_version": "synthetic-finance-v1-8f98e8f34eaa1d10"
+  },
+  "model_trained": false,
+  "test_summary": {
+    "command": ".venv/Scripts/python.exe -m unittest discover -s tests -v",
+    "duration_seconds": 5.261,
+    "exit_code": 0,
+    "tests": 21
+  }
+}

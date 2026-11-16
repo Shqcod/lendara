@@ -2,4 +2,7 @@
 *.md text eol=lf
 *.py text eol=lf
 *.ps1 text eol=crlf
+ml-service/experiments/*.json text eol=lf
+ml-service/requirements-model.lock.txt text eol=lf
+docs/validation/ml-*.json text eol=lf
 

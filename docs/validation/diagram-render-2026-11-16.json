@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-16",
+  "mermaid": "12.3.0",
+  "browser": "Chrome",
+  "external_requests_allowed": false,
+  "diagrams": [
+    {
+      "name": "architecture",
+      "width": 1890,
+      "height": 443,
+      "parsed": true,
+      "rendered": true
+    },
+    {
+      "name": "workflow",
+      "width": 786,
+      "height": 628,
+      "parsed": true,
+      "rendered": true
+    },
+    {
+      "name": "domain-relations",
+      "width": 2012,
+      "height": 840,
+      "parsed": true,
+      "rendered": true
+    }
+  ]
+}

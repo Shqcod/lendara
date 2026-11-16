@@ -1,0 +1,89 @@
+{
+  "application_id": 2706,
+  "version": "if-v1-b-seed17",
+  "restricted_database": true,
+  "states": [
+    {
+      "worker_identity": {
+        "restricted_identity_verified": true,
+        "database": "kkp_pinjaman_test",
+        "roles": "NONE"
+      }
+    },
+    {
+      "status": "pending_verification",
+      "submission": 1799,
+      "checks": [
+        {
+          "id": 1260,
+          "attempt": 1,
+          "status": "failed",
+          "score": null,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "worker_identity": {
+        "restricted_identity_verified": true,
+        "database": "kkp_pinjaman_test",
+        "roles": "NONE"
+      }
+    },
+    {
+      "status": "pending_verification",
+      "submission": 1799,
+      "checks": [
+        {
+          "id": 1260,
+          "attempt": 1,
+          "status": "failed",
+          "score": null,
+          "model": "if-v1-b-seed17"
+        },
+        {
+          "id": 1261,
+          "attempt": 2,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "worker_identity": {
+        "restricted_identity_verified": true,
+        "database": "kkp_pinjaman_test",
+        "roles": "NONE",
+        "database_supporting_connections_verified": true
+      }
+    },
+    {
+      "status": "pending_verification",
+      "submission": 1800,
+      "checks": [
+        {
+          "id": 1262,
+          "attempt": 1,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    },
+    {
+      "status": "approved",
+      "submission": 1800,
+      "checks": [
+        {
+          "id": 1262,
+          "attempt": 1,
+          "status": "succeeded",
+          "score": 0.087653310536504,
+          "model": "if-v1-b-seed17"
+        }
+      ]
+    }
+  ],
+  "document_setup": "D01 UI; other required types guarded fixtures"
+}

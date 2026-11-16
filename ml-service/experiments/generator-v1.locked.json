@@ -1,0 +1,28 @@
+{
+  "borderline": {
+    "anomaly_percent": 10,
+    "data_seed": 20261118,
+    "groups": 1000,
+    "injection_seed": 20261119,
+    "row_seed": 20261120,
+    "rows_per_group": 2
+  },
+  "generator_version": "synthetic-finance-v1-r2",
+  "main": {
+    "anomaly_percent": 10,
+    "data_seed": 20261115,
+    "generator_version": "synthetic-finance-v1",
+    "groups": 5000,
+    "injection_seed": 20261117,
+    "rows_per_group": 2,
+    "split_percent": {
+      "test": 15,
+      "train": 70,
+      "validation": 15
+    },
+    "split_seed": 20261116,
+    "status": "draft"
+  },
+  "protocol_sha256": "0387430a6f3b8274d1372e40358832b9ad2d845ac5facf0ce96095a079d1f64e",
+  "status": "locked"
+}

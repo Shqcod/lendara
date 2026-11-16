@@ -1,0 +1,11 @@
+Lendara - private bootstrap and role presence, 2026-11-16
+php artisan test --filter="LocalDemoAccountsTest|LocalDemoDatabaseGuardTest|ReviewerBootstrapTest|AdminAccountsTest" --no-ansi
+13 passed /141 assertions /25.49s /exit0, MySQL kkp_pinjaman_test.
+Tests cover five active roles, inactive admin excluded, read-only/no identity output,
+production refusal and existing secret-prompt/admin authorization behavior.
+
+Development profile Accounts: expected exit1, all five role-presence flags false.
+No development accounts created or modified. No default password, argv credential,
+environment edits, model activation or grant mutation in this session.
+Operator must enter bootstrap password directly at private terminal secret prompt.
+Full backend/browser/frontend/ML suites not rerun; previous passes are separate evidence.

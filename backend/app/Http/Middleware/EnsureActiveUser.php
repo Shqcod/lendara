@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\AccountAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,14 @@ class EnsureActiveUser
                 'message' => 'Akun dinonaktifkan. Hubungi administrator.',
                 'code' => 'ACCOUNT_INACTIVE', 'errors' => (object) [],
             ], 403);
+        }
+
+        if ((int) $request->session()->get('access_generation', 0) !== app(AccountAccess::class)->generation($request->user()->id)) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return response()->json(['message' => 'Sesi telah dicabut. Silakan masuk kembali.', 'code' => 'SESSION_REVOKED', 'errors' => (object) []], 401);
         }
 
         return $next($request);

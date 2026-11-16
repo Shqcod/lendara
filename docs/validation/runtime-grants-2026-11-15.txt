@@ -1,0 +1,33 @@
+Lendara - runtime grant plan / MySQL privilege probe
+Date: 2026-11-15
+Database under test: MySQL 8.0.30 / kkp_pinjaman_test
+
+php artisan test --filter=RuntimeDatabaseGrantsTest --no-ansi
+PASS: 2 tests / 12 assertions / 0.59s / exit 0
+
+APP_ENV=testing php tests/Support/runtime-grants.php --probe
+Final PASS: 79 checks / transaction rolled_back / temporary_account removed / exit 0
+Positive: append-only SELECT/INSERT, shared/exclusive locking reads, permitted
+column updates, supporting-table CRUD, transactional cache/audit fixtures.
+Negative: history UPDATE/DELETE, immutable columns, user/profile DELETE,
+migrations/password_reset_tokens/mysql.user access.
+Initial harness failures: generated-password result-key casing; PDO SELECT
+cursor left open by exec. Fixed key normalization, query/closeCursor, cleanup
+finally independent of rollback. Identified and removed only the temporary
+identity left by the failed invocation. Follow-up probe-account inventory: [].
+No credentials, secret values, SQL exception bodies or user records recorded.
+
+php artisan test --no-ansi
+PASS: 141 tests / 1480 assertions / 88.61s / exit 0
+Includes domain concurrency tests on independent MySQL connections.
+Full suite uses test operator credentials for fixture setup, not runtime user.
+
+php vendor/bin/pint --test
+PASS / exit 0
+php artisan db:runtime-grants kkp_pinjaman_test lendara_runtime_test 127.0.0.1
+PASS / prints 20 table-specific GRANT statements only / exit 0
+git diff --check
+PASS
+
+No dev/deployment account or environment file changed. No frontend/browser/ML
+rerun. Full application regression under restricted credentials remains pending.

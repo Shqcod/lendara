@@ -1,6 +1,6 @@
 # Kamus data dan constraint — v1.2
 
-Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; retry manual dan persetujuan tingkat 1/2 tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif akun masih berikutnya. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
+Schema 14 tabel domain sudah tersedia melalui migration users dan `2026_11_06_000002_create_loan_domain_tables`, terpasang pada database dev/test tanpa reset. Constraint diuji pada MySQL 8.0.30; alur nasabah/job prediksi dan antrean/claim/release internal tersedia. Aksi verifikator note/revisi/forward tersedia; retry manual dan persetujuan tingkat 1/2 tersedia; admin daftar/buat akun internal dan log tersedia; edit role/nonaktif-aktif akun internal dan pencabutan sesi tersedia. InnoDB, utf8mb4, semua id BIGINT UNSIGNED; uang DECIMAL(18,2); waktu DATETIME UTC. Gunakan VARCHAR + CHECK untuk enum domain. Semua FK ON DELETE RESTRICT. Nullability eksplisit pada migration, terutama draf yang belum lengkap.
 
 ## 14 tabel domain
 
@@ -48,6 +48,14 @@ Indeks antrean: applications(status), assignments(assigned_to,ended_at), anomaly
 
 ## Penghapusan draf dan pembersihan persisten
 
+CleanupCrashTest kini membuktikan empat jendela penjadwalan: kompensasi upload sebelum/sesudah enqueue autocommit, delete draf sebelum/sesudah commit. Job delete belum commit tidak terlihat pada koneksi lain dan crash mempertahankan draf/metadata/file. Setelah commit job durable tetap tersedia dan worker nyata dapat membersihkan fixture pada disk/queue test unik. Crash sebelum enqueue kompensasi tetap menyisakan orphan. Lihat ORPHAN_DOCUMENT_AUDIT untuk batas bukti.
+
+UploadCrashAuditTest kini membuktikan empat titik interupsi/commit dengan CustomerDocuments asli, dua koneksi MySQL dan disk fiktif. File dari INSERT belum commit dapat tampak tanpa referensi pada audit lalu menjadi referenced setelah commit; audit tetap baca-saja. Bukti ini tidak mencakup crash enqueue kompensasi atau keamanan penghapusan otomatis. Matriks/prosedur operator di ORPHAN_DOCUMENT_AUDIT.md.
+
+Audit baca-saja `documents:audit-orphans` kini tersedia; lihat ORPHAN_DOCUMENT_AUDIT.md. Ia melaporkan observasi kandidat dengan tenggang minimal24 jam tanpa menghapus/enqueue. Crash recovery dan penghapusan orphan terkontrol masih belum terbukti; referensi belum commit tetap dapat luput dari audit.
+
+Rencana grant yang dapat dicetak dan probe MySQL terisolasi kini tersedia di [DATABASE_RUNTIME.md](DATABASE_RUNTIME.md). Probe membuktikan matriks hak pada akun sementara DB test; akun development/deployment belum diganti. Shared locking read pada jenis dokumen, snapshot terakhir dan riwayat keputusan menghindari kebutuhan izin UPDATE pada konten immutable; lock exclusive pada user/pengajuan tetap menjaga serialisasi.
+
 Transaksi mengunci pengajuan, memastikan status draft dan belum ada submission, menyimpan daftar path file dalam job pembersihan **database queue pada koneksi transaksi yang sama**, menghapus document_versions lalu loan_applications, dan menulis activity_log. Job pembersihan di-enqueue di dalam transaksi (gunakan beforeCommit jika konfigurasi default after_commit=true) sehingga rollback ikut membatalkan job. Worker baru dapat melihat row job setelah commit. Ini pengecualian sadar dari dispatch prediksi afterCommit: setelah penghapusan tidak ada parent yang bisa dipindai untuk pemulihan.
 
 Job hanya menghapus path yang dibuat server di disk privat. Idempoten: file tidak ada berarti berhasil. Kegagalan tersimpan di failed_jobs, dapat diulang, tidak hilang. Jangan menghapus file fisik sebelum commit dan jangan membangun path dari nama berkas input. Semua FK tetap RESTRICT; delete draf membersihkan child eksplisit sebelum parent. Jangan CASCADE audit.
@@ -55,6 +63,8 @@ Job hanya menghapus path yang dibuat server di disk privat. Idempoten: file tida
 Implementasi irisan draf memakai `CustomerWorkspace` dan `CleanupDraftDocuments`: urutan lock user → aplikasi → versi dokumen; queue `document-cleanup`, koneksi database yang sama, dispatch beforeCommit. Job hanya menerima path relatif berawalan `loan-documents/` pada disk local privat, menolak traversal, dan melempar kegagalan agar dapat diulang. Upload memakai prefix yang sama. Worker queue tersebut dijalankan dengan `--queue=document-cleanup`.
 
 ## Versi dokumen privat
+
+Audit isi baca-saja documents:audit-integrity membandingkan ukuran/hash tersimpan untuk semua versi dengan disk privat, termasuk versi lama. Metadata dibaca chunk100/stream64KiB dan output agregat tanpa identitas/path. Kegagalan/inconsistency tidak memperbaiki metadata/file; audit bukan snapshot atomik atau bukti restore. Lihat BACKUP_RESTORE.md sebelum menyiapkan backup pasangan DB/disk.
 
 `CustomerDocuments` mengunci user → aplikasi → jenis dokumen → versi terkini untuk mengalokasikan versi, menyimpan file baru, lalu metadata dan audit dalam transaksi. Unique(application_id,document_type_id,version_number) tetap pengaman SQL. Path server `loan-documents/<application_id>/<uuid>.<extension>` berada pada disk local privat; nama asli hanya metadata/attachment, bukan path. Hash SHA256 dan ukuran disimpan dari file unggahan. Model DocumentVersion menolak update instance; query SQL langsung tetap memerlukan pengamanan grant runtime sesuai target di atas.
 
@@ -107,4 +117,18 @@ ApprovalActions mengunci user aktif/role penyetuju → aplikasi scope → assign
 
 ## Akun internal admin (irisan awal)
 
-InternalAccounts.create mengunci user admin, memeriksa ulang is_active/role, insert akun aktif dengan satu role internal dan hash password dari model User, lalu activity_logs internal_user.created atomik. Unique users.email tetap; race duplicate diterjemahkan ke validasi email, rollback audit membatalkan akun. Tidak mengubah schema/grant/sessions/assignments atau hak unduh. DomainConcurrencyTest accounts_http membuktikan dua koneksi/kernel dari admin yang sama dengan validator sebelum lock user, lock wait aktual dan hasil 201/422; satu akun/audit. Percobaan dua admin berbeda tidak berhasil mengamati pasangan wait yang diharapkan di harness ini dan bukan bukti yang diklaim. Nonaktif/role-edit/cabut sessions tetap target berikutnya.
+InternalAccounts.create mengunci user admin, memeriksa ulang is_active/role, insert akun aktif dengan satu role internal dan hash password dari model User, lalu activity_logs internal_user.created atomik. Unique users.email tetap; race duplicate diterjemahkan ke validasi email, rollback audit membatalkan akun. Tidak mengubah schema/grant/sessions/assignments atau hak unduh. DomainConcurrencyTest accounts_http membuktikan dua koneksi/kernel dari admin yang sama dengan validator sebelum lock user, lock wait aktual dan hasil 201/422; satu akun/audit. Percobaan dua admin berbeda tidak berhasil mengamati pasangan wait yang diharapkan di harness ini dan bukan bukti yang diklaim. Perubahan akses tersedia pada irisan berikut yang dijelaskan di bawah.
+
+## Perubahan akses akun internal
+
+AccountManagement mengunci actor+target users berurutan ID; actor wajib admin aktif, target internal. Self-change ditolak sesuai pilihan pengguna, actor admin lain tetap aktif sehingga tidak menghapus admin terakhir. Lock target sebelum daftar aplikasi/assignment mencegah reviewer claim baru melewati deaktivasi. Aplikasi dikunci urut ID sebelum tugas; role-change menolak tugas aktif. Nonaktif menutup tugas released/ended_by/reason dan audit tugas, user.is_active/role/remember_token, delete sessions dan audit user.access_changed atomik. Activate tidak membuka tugas lama. Status/snapshot/check pinjaman tetap. Sesi database wajib pada koneksi default yang sama.
+
+Tanpa migration/schema baru: ID audit append-only user.access_changed dipakai sebagai penanda revokasi, tersimpan pada sesi saat login di bawah lock user. Middleware membandingkannya termasuk sesudah reaktivasi; request lama yang menyimpan kembali sesi tidak memberikan akses pada permintaan berikutnya. Test marker lama mensimulasikan payload lama dalam feature test. Request yang sudah diotorisasi/berjalan bukan proses yang dipaksa berhenti; semua mutasi domain memeriksa active/role terkunci sebagaimana sebelumnya. Concurrency HTTP kernel dua koneksi dengan lock wait aktual membuktikan deactivate lalu claim ditolak dan claim lalu deactivate menutup tugas yang baru commit.
+
+## Registrasi model asli dari metadata
+
+ModelRegistration memverifikasi SHA256 pada byte metadata yang sama dengan yang diparsing, path/hash artefak dan schema fitur/DECIMAL. Mengisi model_versions+audit atomik di bawah named lock aktivasi yang sama dengan stub; versi identik idempoten, perbedaan immutable ditolak. Aktivasi eksplisit memeriksa readiness/hash sebelum transaksi milik command dan menolak model aktif lain; unique version/active_marker tetap pengaman. Tidak ada migration atau penggantian aktif otomatis. Lihat MODEL_REGISTRATION.md untuk batas uji dan handover.
+
+## Handover aktif maintenance
+
+ModelHandover memakai named lock aktivasi, seluruh row model berurutan ID, expected-active dan unique marker; deaktif/aktif/audit model.handover atomik. Tidak menulis metadata atau repin checks. Versi processing tidak tersedia ditolak; seluruh model asli terdaftar wajib loaded/hash cocok untuk retry mendatang. Operator wajib quiesce writer dan konfigurasi; bukan barrier otomatis lintas proses. Lihat MODEL_HANDOVER.md.

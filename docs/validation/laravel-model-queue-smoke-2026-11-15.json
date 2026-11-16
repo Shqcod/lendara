@@ -1,0 +1,35 @@
+{
+  "active_model_replaced": false,
+  "database": "kkp_pinjaman_test",
+  "fixture": {
+    "application_id": 2428,
+    "check_id": 1114,
+    "model_is_active": false,
+    "queue": "model-smoke-01m7f42cr1hvhsrmj7vkzd970t",
+    "version_code": "if-v1-b-seed17"
+  },
+  "heldout_evaluated": false,
+  "ready": {
+    "contract_version": "1",
+    "default_model_version_code": "if-v1-b-seed17",
+    "loaded_model_versions": [
+      "if-v1-b-seed17"
+    ],
+    "loaded_models": [
+      {
+        "artifact_hash": "fe968bc4b284d0bbf0f97d5eed3578b4ce8dcffbb1020144554c40c272ef4fc4",
+        "model_version_code": "if-v1-b-seed17"
+      }
+    ],
+    "mode": "model",
+    "ready": true
+  },
+  "result": {
+    "application_status": "pending_verification",
+    "check_id": 1114,
+    "is_anomaly": false,
+    "score": 0.087653310536504,
+    "status": "succeeded"
+  },
+  "worker_exit_code": 0
+}

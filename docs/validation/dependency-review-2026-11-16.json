@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-16",
+  "composer_application_locked_advisories": 0,
+  "composer_internal": {
+    "version": "2.11.1",
+    "advisory": "GHSA-6prc-h956-hxjq",
+    "package": "symfony/filesystem",
+    "status": "open",
+    "new_version_reported_by_diagnose": "2.11.2",
+    "updated_globally": false
+  },
+  "npm": {
+    "counts": {
+      "info": 0,
+      "low": 4,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 4
+    },
+    "packages": [
+      "@sveltejs/adapter-auto",
+      "@sveltejs/kit",
+      "@sveltejs/vite-plugin-svelte",
+      "deepmerge"
+    ],
+    "advisories": [
+      {
+        "source": 1243505,
+        "name": "deepmerge",
+        "dependency": "deepmerge",
+        "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+        "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+        "severity": "low",
+        "cwe": [
+          "CWE-1321"
+        ],
+        "cvss": {
+          "score": 5.3,
+          "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        "range": ">=4.2.0 <=4.3.1"
+      }
+    ],
+    "proposed_major_downgrades_applied": false
+  },
+  "lockfiles_changed": false,
+  "audit_or_tls_disabled": false
+}

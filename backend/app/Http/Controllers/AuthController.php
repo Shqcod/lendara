@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AccountAccess;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,7 @@ class AuthController extends Controller
             }
 
             Auth::guard('web')->login($user);
+            request()->session()->put('access_generation', app(AccountAccess::class)->generation($user->id));
 
             return $user;
         });

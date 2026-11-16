@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\RestoreWorkspace;
+
 return [
 
     /*
@@ -32,7 +34,9 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => (env('DB_DATABASE') === 'kkp_pinjaman_restore_test' || env('LENDARA_RESTORE_ID') !== null)
+                ? RestoreWorkspace::root((string) env('LENDARA_RESTORE_ID'), (string) env('DB_DATABASE'), (string) env('APP_ENV')).'/private'
+                : storage_path('app/private'),
             'serve' => false,
             'throw' => false,
             'report' => false,
