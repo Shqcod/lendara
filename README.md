@@ -1,1 +1,101 @@
+# Lendara — prototipe pengajuan pinjaman
 
+**Lendara** adalah nama produk dengan folder utama `lendara`. Judul akademik proyek: **Rancang Bangun Sistem Pengajuan Pinjaman Berbasis Web dengan Deteksi Anomali dan Persetujuan Berjenjang**.
+
+Laravel 12 dan SvelteKit TypeScript menyediakan irisan nasabah, pengiriman snapshot, serta antrean/detail/claim/release internal dengan scope tiga peran dan dokumen privat. Pengiriman membuat pemeriksaan database queue dengan deadline dan hasil kondisional. **Irisan nasabah serta antrean/penugasan terverifikasi pada MySQL nyata dan Chrome**; rincian di PROGRESS. Aksi verifikator catatan/revisi/forward tersedia. Retry manual tersedia untuk verifikator pemilik tugas setelah pemeriksaan gagal. Persetujuan tingkat 1/2 tersedia; admin daftar/buat akun internal dan log ringkas tersedia; edit role/nonaktif-aktif akun internal dan pencabutan sesi tersedia; eksperimen model asli dan FastAPI mode model tersedia; registrasi metadata dan smoke queue Laravel ke model tersedia; command handover maintenance tersedia; workflow Chrome dengan model asli pada lingkungan restore dan pemulihan backup pengajuan lengkap sudah terbukti. Kelima peran dan skenario utama demo operator development sampai Disetujui kini terverifikasi; penerimaan formal bersama perusahaan tetap berikutnya. Mode stub tetap tersedia untuk local/testing; jangan menyamakannya dengan evaluasi ML.
+
+Mulai dari [paket serah terima](docs/HANDOVER.md), [diagram sistem](docs/SYSTEM_OVERVIEW.md) dan [acuan konfigurasi tanpa rahasia](docs/CONFIGURATION_REFERENCE.md). Lihat [panduan setup dan pengujian](docs/SETUP.md) serta [status nyata](docs/PROGRESS.md). Node sistem 22.13.1 tetap; frontend memakai Node 22.23.4 portable di `.tools/` melalui `scripts/frontend.ps1` karena scaffold SvelteKit 3 memerlukan Node minimal 22.17. Dependensi dan lockfile disertakan; `.tools/`, vendor, node_modules, dan rahasia lokal diabaikan Git.
+
+## Mulai di Windows
+
+Panduan demo model asli, launcher tanpa penulisan environment dan preflight baca-saja: [LOCAL_WINDOWS_DEMO](docs/LOCAL_WINDOWS_DEMO.md). Runtime operator harus dikonfigurasi terpisah; hasil DB test bukan aktivasi development.
+
+1. Ekstrak folder ini ke lokasi seperti `Q:\lendara`. Boleh memakai direktori lain. Jika sudah ada repo, bandingkan berkas sebelum menyalin; jangan menimpa pekerjaan lama.
+2. Buka folder utama di VS Code melalui File > Open Folder. Pastikan AGENTS.md ada pada root yang dibuka.
+3. Laragon: jalankan MySQL saja. Apache boleh tetap berhenti. PHP CLI menggunakan `Q:\maragoon\laragon\bin\php\php-8.3.36\php.exe`.
+4. Terminal PowerShell root: `git init` bila belum menjadi repository. Jangan inisialisasi Git lagi di subfolder.
+5. Jalankan pemeriksaan: `powershell -ExecutionPolicy Bypass -File .\scripts\check-environment.ps1` (Bypass hanya untuk proses ini).
+6. Mulai Codex dengan prompt pada `docs/CODEX_START.md`. Ikuti setup bertahap dan catat hasil di PROGRESS.
+
+## Scaffold aplikasi
+
+`powershell -ExecutionPolicy Bypass -File .\scripts\scaffold-apps.ps1`
+
+Skrip membutuhkan internet dan membuat Laravel **12.*** serta SvelteKit TypeScript minimal tanpa hook migration dan tanpa instalasi npm otomatis. Folder backend/frontend yang sudah ada dilewati, tidak dihapus. Bila instalasi parsial, periksa isinya dan lanjutkan secara manual. Checkout ini sudah memiliki scaffold beserta lockfile; gunakan `composer install` dan `scripts/frontend.ps1 ci --engine-strict` untuk memasang versi terkunci. Jika muncul engine/dependency error, evaluasi versi tanpa --force.
+
+Script tidak mengatur DB, memasang Sanctum, atau menjalankan migration. Contoh konfigurasi berada di config/; gabungkan dengan hasil scaffold, jangan menimpa .env tanpa pemeriksaan.
+
+Konfigurasi backend memakai `APP_NAME="Lendara"`. Halaman masuk/daftar, metadata, favicon frontend, dan metadata FastAPI memakai Lendara. Struktur `backend/`, `frontend/`, dan `ml-service/` tetap.
+
+## Stub Python
+
+PowerShell root:
+
+```powershell
+python -m venv ml-service/.venv
+& .\ml-service\.venv\Scripts\python.exe -m pip install -r .\ml-service\requirements.txt
+Push-Location ml-service
+& .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_stub.py -v
+Pop-Location
+powershell -ExecutionPolicy Bypass -File .\scripts\start-ml.ps1
+```
+
+start-ml.ps1 membuat .env lokal dengan kunci acak bila belum ada, lalu bind FastAPI ke **127.0.0.1:8001**. Kunci Laravel harus disamakan secara lokal. Jangan kirim kunci ke chat/Git/browser. Skrip tidak mencetak nilainya. .env.example hanya contoh; service membaca environment proses yang diisi skrip.
+
+## Generator sintetis
+
+Protokol eksperimen sudah disetujui/dikunci; generator revisi menghasilkan data utama+borderline dengan provenance dan hash. Dependency train/serve dipin terpisah, pipeline A/B, pemilihan model dan evaluasi holdout satu kali selesai; FastAPI mode model tersedia; registrasi metadata dan smoke queue Laravel tersedia; handover demo belum dijalankan. Ikuti [runbook ML](docs/ML_RUNBOOK.md) dan [protokol beku](docs/ML_EXPERIMENT_PLAN.md). Dataset lokal diabaikan Git; tidak membuat akun/DB atau model aktif. Generator/config draf lama hanya bukti historis/tes regresi.
+
+## Proses pengembangan yang akan berjalan
+
+| Proses | Perintah / lokasi |
+|---|---|
+| Database | MySQL Laragon, port 3306 |
+| Backend (setelah konfigurasi DB) | dari root: `powershell -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` |
+| Frontend | dari root: `powershell -ExecutionPolicy Bypass -File .\scripts\frontend.ps1 run dev` |
+| Queue (setelah migration/setup) | di backend: `php artisan queue:work --queue=predictions,document-cleanup --tries=1 --sleep=1 --timeout=0` pada Windows |
+| Scheduler (setelah jadwal ditulis) | di backend: `php artisan schedule:work` |
+| FastAPI stub | dari root: skrip start-ml.ps1 |
+
+Backend dapat diakses browser di http://localhost:8000 walau bind 127.0.0.1. Browser frontend/API sama-sama gunakan localhost; jangan mencampur localhost dengan 127.0.0.1 pada origin cookie. Host 127.0.0.1 dipakai untuk komunikasi internal Laravel–FastAPI.
+
+Setelah masuk sebagai nasabah, pilih **Buka ruang nasabah** untuk menuju `/customer`. Profil dan draf boleh disimpan sebagian. Maksimal satu pengajuan aktif; penghapusan hanya untuk draf yang belum pernah dikirim, dengan konfirmasi. Panel dokumen menyediakan unggah satu berkas fiktif PDF/JPG/JPEG/PNG maksimal 5 MB, versi terkini, dan unduh privat. Mengunggah versi baru mempertahankan berkas lama. Simpan perubahan, lalu pilih **Tinjau dan lihat pengiriman** untuk meninjau, mengonfirmasi kirim, melihat arsip versi/dokumen, dan riwayat status.
+
+Pengiriman memerlukan model aktif yang sesuai; jika belum siap, data kerja tetap tersimpan dan API mengembalikan 503. Untuk pengembangan lokal **mode stub**, dari backend jalankan secara eksplisit `php artisan ml:register-stub --activate` bila ingin mengaktifkan stub-v0. Perintah menolak mengganti model aktif lain dan tidak berlaku pada demo/production. Tidak ada aktivasi database pengembangan otomatis. Jalankan worker dan scheduler sesuai SETUP; kunci ML diatur lokal tanpa membagikannya ke chat.
+
+Helper backend membatasi upload PHP 5M dan post 8M hanya pada proses server, tanpa mengubah php.ini atau .env. Webserver demo/deployment harus menyelaraskan batas yang sama; rincian 413/422 di SETUP.
+
+Peninjau masuk melalui halaman yang sama, lalu pilih **Buka antrean internal** menuju `/internal`: Antrean pengajuan, Tugas saya, pencarian nomor lengkap, detail/arsip, unduhan, claim dan release beralasan. Verifikator dan penyetuju hanya melihat tahap masing-masing; admin tidak mendapat akses berkas. Jika perlu akun lokal baru, jalankan dari backend `php artisan users:create-reviewer`: nama/email/peran dan kata sandi diminta interaktif, tanpa kata sandi bawaan. Command hanya local/testing dan tidak dijalankan otomatis pada DB pengembangan. UI catatan/revisi/forward verifikator tersedia; retry manual tersedia; persetujuan tingkat 1/2 tersedia.
+
+Queue Windows: `--timeout=0` bukan pengamanan terminasi. Deadline database, HTTP timeout, scheduler, dan pengaman efek DB duplikat kini tersedia. Baca ENVIRONMENT. Runtime Linux dengan PCNTL diperlukan untuk menguji penghentian worker paksa sebagaimana rencana 30 detik.
+
+## Database
+
+Rencana grant runtime/append-only, probe MySQL test, dan langkah penerapan operator: [DATABASE_RUNTIME](docs/DATABASE_RUNTIME.md). Perintah pencetak rencana tidak mengubah akun atau konfigurasi lokal.
+
+Versi terverifikasi pengguna: MySQL 8.0.30. Gunakan nama database yang sudah dikonfigurasi; nama produk Lendara tidak mengharuskan penggantian nama database. Konfigurasi acuan tetap `kkp_pinjaman` (dev) dan `kkp_pinjaman_test` (test). Hanya untuk setup awal jika database tersebut belum ada, buat database kosong melalui HeidiSQL:
+
+```sql
+CREATE DATABASE IF NOT EXISTS kkp_pinjaman CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS kkp_pinjaman_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Isi kredensial lokal sendiri. Siapkan user migration untuk DDL dan user runtime dengan izin per tabel saat implementasi siap; jangan memberi user runtime DROP/ALTER. Test hanya DB kkp_pinjaman_test.
+
+## Status dan keterbatasan
+
+- Dokumen merekam spesifikasi bisnis v1.2 dan kontrak API v1.1.
+- Scaffold/build, schema 14 tabel, profil/draf, constraint/konkurensi MySQL, dan alur Chrome lulus. PHPUnit memeriksa `SELECT DATABASE()` efektif sebelum transaksi uji; hasilnya `kkp_pinjaman_test`. Rincian hasil aktual di PROGRESS dan docs/validation/.
+- HTML wireframe dan diagram yang dibuat sebelumnya tidak dibundel; deskripsi UI tersedia. Gambar final dapat ditambahkan ke docs/reference/ oleh pengguna.
+- Audit dependensi aplikasi Laravel bersih pada sesi setup. Composer 2.11.1 masih melaporkan advisory internal Symfony; npm masih melaporkan empat temuan tingkat rendah dari rantai deepmerge. Lihat SETUP untuk batas dan tindak lanjut; audit/TLS tetap aktif.
+
+
+Panduan menjalankan model terpilih dengan registry/hash tepercaya: [runtime model](docs/ML_MODEL_RUNTIME.md). Helper ML sekarang memakai app.serve:app, tanpa mengubah kode stub legacy atau .env operator otomatis.
+
+Kebijakan Git: seluruh berkas environment, termasuk contoh `.env.example`/`.env.testing.example`/`.env_example`, kini diabaikan dan tidak dilacak. Contoh lokal dipertahankan; checkout baru setelah perubahan ini tidak menyertakannya. Aturan ini tidak membersihkan commit historis. Jangan force-add contoh atau kredensial lokal.
+
+Registrasi metadata model dan aktivasi eksplisit tanpa mengganti model aktif lain: [panduan registrasi Laravel](docs/MODEL_REGISTRATION.md). Smoke pada database test sudah membuktikan queue?model nyata; ini belum aktivasi DB pengembangan atau submit browser dengan model aktif.
+
+[Handover model aktif](docs/MODEL_HANDOVER.md) tersedia sebagai command maintenance dengan expected-active/readiness/hash dan proteksi processing. Pengujiannya pada MySQL rollback; prosedur maintenance dan aktivasi lingkungan operator belum dijalankan.
+
+[Regresi browser model asli](docs/MODEL_BROWSER_REGRESSION.md) sudah lulus untuk submit, retry, revisi/kirim ulang dan persetujuan L1/L2 sampai approved pada DB test. Penunjuk model test dipulihkan setelah run; konfigurasi operator tidak diubah.
